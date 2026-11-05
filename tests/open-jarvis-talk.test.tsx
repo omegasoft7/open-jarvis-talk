@@ -908,3 +908,42 @@ test('settings: research off, text-only replies, and the Mac voice at the chosen
   expect(asked[0]).not.toContain('<research>')
   expect(speaks.length).toBe(1) // only the test; replies are text only
 })
+
+test('the 🎙️ stays in the footer while talking, and brings the conversation back', async ($, on) => {
+  mock.clock(on)
+  const opened: string[] = []
+  let releaseListener = () => {}
+  const listenerExits = new Promise<void>(resolve => {
+    releaseListener = resolve
+  })
+  on('ui.open', (_, e) => {
+    opened.push(e.id)
+
+    return { value: { isPlaced: true } }
+  })
+  on('ui.close', () => ({ value: undefined }))
+  on('process.run', (_, e) => {
+    if (isSetup(e.argv)) return checked()
+    if (e.argv[0] === '/bin/kill') releaseListener()
+
+    return RAN
+  })
+  on('process.spawn', async function* () {
+    yield { stream: 'stdout' as const, text: 'pid: 4343\nlistening\n' }
+    await listenerExits
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  const footer = await $.ui.mount({ ...FOOTER, surface: 'desktop', props: { modes: ['Auto'] } })
+  expect((await footer.find({ type: 'Button', key: 'talk-jarvis' }))?.props.label).toBe('🎙️')
+  const before = opened.length
+  await footer.press({ key: 'talk-jarvis' })
+  expect(opened.slice(before)).toEqual(['jarvis-voice'])
+  await footer.unmount()
+
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  await voice.press({ key: 'end' })
+  await voice.unmount()
+})

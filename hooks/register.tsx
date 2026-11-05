@@ -1357,8 +1357,8 @@ export const register: Register = on => {
   // One microphone icon in the footer under the prompt, beside the mode labels
   // the footer already shows (kept as they were): the way into a conversation.
   // (Mods cannot add icons to the app's own toolbar; this is the nearest place.)
-  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
-    if (isActive(await read($, talk))) return next(e)
+  // It stays while a conversation runs: pressing it then shows that conversation.
+  on('ui.render', { component: 'SessionMode' }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const modes = e.props.modes.join(' & ')
 

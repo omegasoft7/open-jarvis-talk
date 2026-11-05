@@ -2,7 +2,7 @@
 
 *A voice companion for Claude Code.*
 
-Talk to your Claude Code session out loud. Press the 🎙️ under the message box and a conversation screen opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
+Talk to your Claude Code session out loud. Press the 🎙️ at the start of the footer under the message box and a conversation panel opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
 
 - **Knows the session.** It reads the conversation you're in, so it can answer questions about it.
 - **Hands-free.** It listens, answers, and listens again. A pause doesn't cut you off. Say "goodbye", or press **End conversation**, to stop.
@@ -10,6 +10,35 @@ Talk to your Claude Code session out loud. Press the 🎙️ under the message b
 - **On-device speech recognition.** It uses macOS speech recognition.
 - **Web research when needed.** For questions that need the web, it runs a separate `claude -p` search and answers from what it finds.
 - **You approve every command.** Drafts appear on screen with **Send to session** and **Discard** buttons.
+- **Make it yours.** Press **⚙** to give Jarvis your own instructions, pick its voice and speed, and more.
+
+## How it looks
+
+These are illustrations of the Claude desktop app. The plugin's parts (the 🎙️, the panel, the orb, the buttons and their wording) are drawn from its code; the conversation shown is an example.
+
+**1. Press 🎙️ to start.** It sits at the start of the footer under the message box.
+
+![The 🎙️ at the start of the footer under the message box](docs/screenshots/01-where-the-icon-is.png)
+
+**2. The first press sets it up.** It checks your Mac, shows what it will install and how big it is, and installs nothing until you press **Install**.
+
+![The setup screen: checks of the Mac, what will be installed and its size, and the Install button](docs/screenshots/02-first-run-setup.png)
+
+**3. Talk about the session.** Tap the words under the orb to send what you said at once, or to interrupt Jarvis.
+
+![The conversation panel while Jarvis speaks, with the orb and Speaking… tap to interrupt](docs/screenshots/03-talking.png)
+
+**4. Approve what it sends.** Jarvis drafts the message; nothing reaches the session until you approve it.
+
+![A drafted command with Send to session and Discard buttons](docs/screenshots/04-approve-a-command.png)
+
+**5. Or type.** `/open-jarvis-talk-chat` opens a typed side chat about the session.
+
+![The typed chat panel with an answer, a draft and the ask field](docs/screenshots/05-typed-chat.png)
+
+**6. Settings.** Your own instructions, reply style, voice and speed with a test button, listening language and more.
+
+![The settings screen with instructions, voice, speed, Test voice and Save](docs/screenshots/06-settings.png)
 
 ## Requirements
 
@@ -81,7 +110,7 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 
 ## Using it
 
-- **🎙️ in the footer under the message box** starts a conversation. The microphone icon is hidden while a conversation is running.
+- **🎙️ at the start of the footer under the message box** starts a conversation. While one is running, it shows that conversation again.
 - **⚙ at the top of the conversation** opens the [settings](#settings).
 - **Tap the words under the orb** ("Listening…", "Thinking…", "Speaking…"):
   - While you talk, a tap sends what you said right away, without waiting for the pause.
