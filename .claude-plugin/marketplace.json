@@ -1,0 +1,11 @@
+{
+  "name": "claude-jarvis",
+  "owner": { "name": "omegasoft7" },
+  "plugins": [
+    {
+      "name": "jarvis",
+      "source": "./",
+      "description": "Talk to Jarvis about your Claude Code session by voice (macOS)."
+    }
+  ]
+}
