@@ -38,7 +38,6 @@ In the Claude desktop app, where `/plugin` doesn't run:
 2. Click **Add marketplace** and enter `omegasoft7/claude-jarvis`.
 3. Click **Add plugin**.
 
-While the repository is private, only people who can read it on GitHub can install it, and their Mac must already have a git login for github.com, such as from `gh auth login` followed by `gh auth setup-git`.
 
 ## First use: guided setup
 
