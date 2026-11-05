@@ -1,0 +1,5 @@
+# uv, the Python installer the natural voice is set up with. Installed from
+# PyPI by pip with these exact hashes (macOS wheels of uv 0.12.18).
+uv==0.12.18 \
+    --hash=sha256:9aa0ef69c7cb2aff485a0e9ce46feeb7b6dbeef3d796ffd04b944cf355ba8334 \
+    --hash=sha256:799dcef1ef97ab6491b34f5827e2da8dd9153d65be056c779b60a2d4d3d6c45b

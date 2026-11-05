@@ -21,8 +21,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 J="${JARVIS_HOME:-$HOME/.claude/jarvis}"
 
 UV_VERSION=0.12.18
-UV_SHA_ARM64=cf40e0c6a202190ccd9e0406dcfdd5b2d6668a9a5c779b17948963df32aafe5b
-UV_SHA_X86=2e4108f5395397c8bc5d43bf83d3bdbb2d0e92b90d0efa607756be704905fa33
 
 MODELS_URL=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
 MODEL_SHA=7d5df8ecf7d4b1878015a32686053fd0eebe2bc377234608764cc0ef3636a6c5
@@ -43,7 +41,7 @@ listener_hash() {
 
 find_uv() {
   local candidate
-  for candidate in "$J/tools/uv" "$(command -v uv 2>/dev/null)" /opt/homebrew/bin/uv \
+  for candidate in "$J/tools/uv-env/bin/uv" "$(command -v uv 2>/dev/null)" /opt/homebrew/bin/uv \
     /usr/local/bin/uv "$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv"; do
     if [ -n "$candidate" ] && [ -x "$candidate" ]; then
       echo "$candidate"
@@ -178,29 +176,23 @@ install_listener() {
   echo "ok: Speech listener built"
 }
 
+# Installs uv from PyPI into its own folder with the Mac's Python (part of the
+# Command Line Tools), pip checking each file against the hashes in
+# setup/uv-requirements.txt.
 get_uv() {
-  local uv arch sha
+  local uv
   if [ "${JARVIS_FORCE_UV_DOWNLOAD:-}" != 1 ] && uv="$(find_uv)"; then
     echo "$uv"
     return 0
   fi
-  case "$(uname -m)" in
-  arm64)
-    arch=aarch64
-    sha=$UV_SHA_ARM64
-    ;;
-  *)
-    arch=x86_64
-    sha=$UV_SHA_X86
-    ;;
-  esac
-  echo "step: Downloading uv $UV_VERSION (Python installer, from github.com/astral-sh/uv)" >&2
+  echo "step: Installing uv $UV_VERSION (Python installer, from PyPI)" >&2
+  rm -rf "$J/tools/uv-env"
   mkdir -p "$J/tools"
-  fetch "https://github.com/astral-sh/uv/releases/download/$UV_VERSION/uv-$arch-apple-darwin.tar.gz" \
-    "$J/tools/uv.tar.gz" "$sha" >&2 || return 1
-  tar -xzf "$J/tools/uv.tar.gz" -C "$J/tools" --strip-components 1 || return 1
-  rm -f "$J/tools/uv.tar.gz"
-  echo "$J/tools/uv"
+  /usr/bin/python3 -I -m venv "$J/tools/uv-env" >>"$J/setup.log" 2>&1 || return 1
+  "$J/tools/uv-env/bin/python" -I -m pip install --quiet --disable-pip-version-check \
+    --no-cache-dir --only-binary :all: --require-hashes \
+    -r "$ROOT/setup/uv-requirements.txt" >>"$J/setup.log" 2>&1 || return 1
+  echo "$J/tools/uv-env/bin/uv"
 }
 
 voice_works() {
@@ -216,7 +208,7 @@ install_voice() {
   fi
   [ "$(uname -m)" = arm64 ] || fail "the natural voice needs an Apple Silicon Mac"
 
-  uv="$(get_uv)" || fail "could not download uv"
+  uv="$(get_uv)" || fail "could not install uv (details in $J/setup.log)"
   echo "ok: Using uv at $uv"
 
   export UV_CACHE_DIR="$J/.uv-cache"

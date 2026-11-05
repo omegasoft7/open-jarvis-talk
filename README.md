@@ -21,24 +21,38 @@ Talk to your Claude Code session out loud. Press the 🎙️ under the message b
 
 ## Install
 
+Open Jarvis Talk isn't in the Claude plugin directory yet, so you install it from its own marketplace, this repository. Add the marketplace first, then install the plugin from it.
+
 At the prompt of a terminal Claude Code session:
 
 ```
-/plugin install open-jarvis-talk --marketplace omegasoft7/open-jarvis-talk
+/plugin marketplace add omegasoft7/open-jarvis-talk
 ```
 
-Answer `y` to add the marketplace, then choose a scope. Use the user scope to have it in every session.
+```
+/plugin install open-jarvis-talk@open-jarvis-talk
+```
+
+Choose a scope when asked. Use the user scope to have it in every session.
 
 From a shell:
 
 ```bash
-claude plugin install open-jarvis-talk --marketplace omegasoft7/open-jarvis-talk
+claude plugin marketplace add omegasoft7/open-jarvis-talk
 ```
+
+```bash
+claude plugin install open-jarvis-talk@open-jarvis-talk
+```
+
+In `open-jarvis-talk@open-jarvis-talk`, the first part is the plugin and the second is this marketplace. Typing only `/plugin install open-jarvis-talk` searches the marketplaces you already have, which can find a different plugin.
 
 In the Claude desktop app, where `/plugin` doesn't run:
 1. Click **+** next to the prompt box, then **Plugins**.
 2. Click **Add marketplace** and enter `omegasoft7/open-jarvis-talk`.
-3. Click **Add plugin**.
+3. Pick **Open Jarvis Talk** from that marketplace and click **Add plugin**.
+
+Restart Claude Code after installing so the plugin loads.
 
 ## First use: guided setup
 
@@ -51,7 +65,7 @@ The first time you press 🎙️, a setup screen opens. Nothing is installed unt
    | --- | --- | --- |
    | Speech listener | about 1 MB | Built on your Mac from [`voice/listen.swift`](voice/listen.swift) |
    | Natural voice (optional) | about 560 MB on disk, about 400 MB download | Python 3.12, the Kokoro voice engine and its voice model, from PyPI and GitHub; downloads are checked against pinned checksums |
-   | uv (only if you don't have it) | about 45 MB | [astral-sh/uv](https://github.com/astral-sh/uv) on GitHub, checked against a pinned checksum |
+   | uv (only if you don't have it) | about 45 MB | [uv](https://github.com/astral-sh/uv) 0.12.18 from PyPI, installed by pip with pinned hashes ([`setup/uv-requirements.txt`](setup/uv-requirements.txt)) |
 
    Press **Skip natural voice** to install only the speech listener, about 1 MB.
 3. **Installs on Install.** Progress shows on the setup screen. When it finishes, press **Start talking**.
@@ -97,11 +111,11 @@ This is the full list, for users and reviewers.
 - **Research questions, to Claude with web search.** When Claude asks for web research, the plugin runs your own `claude` command line tool (`claude -p`). Only web search and web fetch are allowed, and file editing and shell tools are blocked. The question goes in, and the findings come back.
 - **Commands you approve, into the session.** A drafted command is submitted to the session as your message only when you press **Send to session** or say "send it". What's submitted is exactly the draft text shown on screen.
 - **Nothing is uploaded during setup.** Setup only downloads, and only after you press **Install**:
-  - uv, from `github.com/astral-sh/uv`
+  - uv 0.12.18, from PyPI, installed by the Mac's own Python and pip with the pinned hashes in [`setup/uv-requirements.txt`](setup/uv-requirements.txt)
   - Python 3.12 and the Python packages in [`voice/requirements.txt`](voice/requirements.txt), installed by uv from PyPI
   - the voice model, from `github.com/thewh1teagle/kokoro-onnx`
 
-  The uv and voice model downloads are checked against fixed SHA-256 checksums, and the Python packages are pinned to exact versions. The setup script runs the uv it downloads, which is why the directory reports it as a download-and-run command.
+  uv is checked by pip against fixed SHA-256 hashes, the voice model downloads are checked against fixed SHA-256 checksums, and the Python packages are pinned to exact versions. The voice model files are data: nothing downloaded with `curl` is ever run.
 - **Audio stays on your Mac.** Your voice is turned into text by macOS speech recognition, which runs on your Mac when it can. The spoken replies are made on your Mac.
 
 **What it reads**
