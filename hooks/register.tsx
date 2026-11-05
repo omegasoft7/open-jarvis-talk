@@ -118,6 +118,8 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
   await update($, chat, list => [...list, { role: 'you' as const, text: question, isVoice }])
   toNewest($)
   await update($, busy, () => 'Thinking…')
+  askToken += 1
+  const ticket = askToken
   jlog($, `ask voice=${isVoice} q=${JSON.stringify(question.slice(0, 200))}`)
 
   try {
@@ -125,6 +127,11 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
     for (let round = 0; round <= MAX_RESEARCH_ROUNDS; round++) {
       const history = await read($, chat)
       const reply = await $.model.fork({ prompt: buildPrompt(history, findings, isVoice) })
+      if (ticket !== askToken) {
+        jlog($, 'answer dropped: stopped while thinking')
+
+        return null
+      }
 
       if (!reply.isAnswered) {
         jlog($, `fork failed reason=${reply.reason} ${'status' in reply ? `status=${String(reply.status)}` : ''}`)
@@ -147,6 +154,7 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
         await update($, busy, () => `Researching: ${topic}`)
         await update($, chat, list => [...list, note(`Researching: ${topic}`)])
         const answer = await research($, topic)
+        if (ticket !== askToken) return null
         findings.push(`Q: ${topic}\nA: ${answer}`)
         await update($, busy, () => 'Thinking…')
         continue
@@ -172,7 +180,7 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
 
     return null
   } finally {
-    await update($, busy, () => null)
+    if (ticket === askToken) await update($, busy, () => null)
   }
 }
 
@@ -203,8 +211,11 @@ const MIC = '🎙️'
 const SILENT_ROUNDS_BEFORE_PAUSE = 6 // the listener waits 20 s a round
 
 type Stream = { return?: (value?: undefined) => unknown }
-type Child = { stream: Stream; pid?: number; isKilled?: boolean }
+type Child = { stream: Stream; pid?: number; isKilled?: boolean; isSentEarly?: boolean }
 let talkToken = 0
+/** Bumped by a press that stops Jarvis thinking: an answer still on its way
+ * for an older ticket is dropped. */
+let askToken = 0
 let listener: Child | null = null
 let speaker: Child | null = null
 let watchdog: { cancel: () => void } | null = null
@@ -270,10 +281,13 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
   listener = me
   let pending = ''
   let final: string | null = null
+  // Each partial is the whole utterance so far, the same text the listener
+  // would print as final: a "send now" press ends listening with it.
+  let latest = ''
 
   try {
     for await (const piece of stream) {
-      if (talkToken !== mine) break
+      if (talkToken !== mine || me.isSentEarly) break
       pending += piece.text
       const lines = pending.split('\n')
       pending = lines.pop() ?? ''
@@ -281,6 +295,7 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
         if (takePid(me, line)) continue
         if (line.startsWith('partial: ')) {
           const words = line.slice(9)
+          latest = words
           await update($, heard, () => words)
         } else if (line.startsWith('final: ')) {
           final = line.slice(7).trim()
@@ -294,6 +309,7 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
       }
     }
   } catch (error) {
+    if (me.isSentEarly) return latest.trim()
     jlog($, `listener threw: ${String(error)}`)
     await update($, chat, list => [
       ...list,
@@ -305,8 +321,33 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
     if (listener === me) listener = null
   }
   if (talkToken !== mine) return ''
+  if (me.isSentEarly) return latest.trim()
 
   return final ?? ''
+}
+
+/** The press on the state under the orb: while listening, uses what was said
+ * so far at once instead of waiting for the pause; while thinking or speaking,
+ * stops Jarvis and listens again. */
+async function tapOrb($: EngineInterface): Promise<void> {
+  const state = await read($, talk)
+  if (state === 'listening') {
+    const running = listener
+    if (!running || (await read($, heard)).trim() === '') return
+    jlog($, 'send now pressed')
+    running.isSentEarly = true
+    kill($, 'listener')
+  } else if (state === 'speaking') {
+    jlog($, 'interrupt pressed while speaking')
+    kill($, 'speaker')
+  } else if (state === 'thinking') {
+    jlog($, 'interrupt pressed while thinking')
+    askToken += 1
+    await update($, busy, () => null)
+    await update($, chat, list => [...list, note('Stopped. Listening again.')])
+    kill($, 'speaker')
+    void talkLoop($)
+  }
 }
 
 // Jarvis's voice: Kokoro, a local neural voice (~/.claude/jarvis/speak.py, its
@@ -922,6 +963,15 @@ const STATE_WORDS: Record<TalkState, string> = {
   paused: 'Paused',
 }
 
+/** What pressing the state under the orb does now, or null when nothing. */
+function tapHint(state: TalkState, hearing: string): string | null {
+  if (state === 'listening') return hearing.trim() === '' ? null : 'tap to send now'
+  if (state === 'thinking') return 'tap to stop'
+  if (state === 'speaking') return 'tap to interrupt'
+
+  return null
+}
+
 // ---- Hooks -----------------------------------------------------------------
 
 async function openPane($: EngineInterface): Promise<void> {
@@ -1030,9 +1080,18 @@ export const register: Register = on => {
             </Text>
           )}
 
-          <Text bold color={state === 'paused' ? undefined : 'claude'}>
-            {STATE_WORDS[state]}
-          </Text>
+          {tapHint(state, hearing) === null ? (
+            <Text bold color={state === 'paused' ? undefined : 'claude'}>
+              {STATE_WORDS[state]}
+            </Text>
+          ) : (
+            <Button key="tap-orb" plain onPress={() => tapOrb($)}>
+              <Text bold color="claude">
+                {STATE_WORDS[state]}
+              </Text>{' '}
+              <Text dimColor>· {tapHint(state, hearing)}</Text>
+            </Button>
+          )}
 
           {state === 'listening' && hearing !== '' && (
             <Text dimColor wrap="wrap">
@@ -1064,9 +1123,6 @@ export const register: Register = on => {
         )}
 
         <Box gap={1}>
-          {state === 'speaking' && (
-            <Button key="interrupt" label="Interrupt" onPress={() => kill($, 'speaker')} />
-          )}
           {state === 'paused' ? (
             <Button
               key="resume"

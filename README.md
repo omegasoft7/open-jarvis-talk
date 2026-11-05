@@ -82,7 +82,10 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 ## Using it
 
 - **🎙️ in the footer under the message box** starts a conversation. The microphone icon is hidden while a conversation is running.
-- **Interrupt** stops the voice mid-sentence. **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
+- **Tap the words under the orb** ("Listening…", "Thinking…", "Speaking…"):
+  - While you talk, a tap sends what you said right away, without waiting for the pause.
+  - While Jarvis thinks or speaks, a tap stops it, and it listens to you again.
+- **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
 - Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying **"goodbye"** or **"stop"** ends the conversation.
 - The whole conversation stays on the screen, so you can scroll back through it.
 - `/open-jarvis-talk` starts a conversation. `/open-jarvis-talk-chat` opens a typed side chat about the session.
@@ -131,7 +134,7 @@ This is the full list, for users and reviewers.
 | `~/.claude/jarvis/jarvis-listen` | Listens to the microphone and prints what you said as text. Built at setup from [`voice/listen.swift`](voice/listen.swift). |
 | `~/.claude/jarvis/kokoro/bin/python ~/.claude/jarvis/speak.py` | Speaks Jarvis's replies in the natural voice. The script is [`voice/speak.py`](voice/speak.py). |
 | `/usr/bin/say` | Speaks replies in the built-in Mac voice if the natural voice isn't installed or fails. |
-| `/bin/kill` | Stops the listener or the voice at once when you press **Interrupt**, **Pause** or **End conversation**. |
+| `/bin/kill` | Stops the listener or the voice at once when you tap to send now or to interrupt, or press **Pause** or **End conversation**. |
 | `/bin/bash setup/jarvis-setup.sh check`, `install`, `tools` and `dictation` | Setup: checks the Mac, installs on **Install**, opens Apple's Command Line Tools installer, or opens the Dictation settings. |
 | `/bin/zsh -c` with short fixed scripts | Starts the listener and voices so each prints its process id first, and adds a line to `~/.claude/jarvis/jarvis.log`. The scripts are the `LISTEN`, `KOKORO` and `SAY` constants and the `jlog` function in [`hooks/register.tsx`](hooks/register.tsx). |
 | `claude -p`, started through a login shell so it can be found | Web research, as described above. |
