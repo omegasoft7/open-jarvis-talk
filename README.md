@@ -1,10 +1,21 @@
 # Open Jarvis Talk
 
-*A voice companion for Claude Code.*
+*A voice companion for Claude Code. Stop reading. Start talking.*
+
+<p align="center">
+  <a href="docs/video/open-jarvis-talk-intro.mp4"><img src="docs/video/preview.gif" alt="Open Jarvis Talk in 48 seconds: a wall of Claude text, tapping the 🎙️, talking with Jarvis, approving a request, and the settings" width="100%"></a>
+</p>
+
+<p align="center">
+  <b><a href="docs/video/open-jarvis-talk-intro.mp4">▶ Watch the 48-second intro with sound</a></b>
+  &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a>
+</p>
 
 Talk to your Claude Code session out loud. Press the 🎙️ at the start of the footer under the message box and a conversation panel opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
 
 - **Knows the session.** It reads the conversation you're in, so it can answer questions about it.
+- **Beside your session, not inside it.** Your talk with Jarvis isn't added to the session, so it doesn't use up the session's context.
+- **Your own Claude plan.** Jarvis thinks with the Claude account you already use in Claude Code. No API key to set up.
 - **Hands-free.** It listens, answers, and listens again. A pause doesn't cut you off. Say "goodbye", or press **End conversation**, to stop.
 - **Natural voice, on your Mac.** Replies are spoken by [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a text-to-speech model that runs locally. If it isn't installed, the built-in Mac voice is used.
 - **On-device speech recognition.** It uses macOS speech recognition.
@@ -14,7 +25,29 @@ Talk to your Claude Code session out loud. Press the 🎙️ at the start of the
 
 ## How it looks
 
-These are illustrations of the Claude desktop app. The plugin's parts (the 🎙️, the panel, the orb, the buttons and their wording) are drawn from its code; the conversation shown is an example.
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/01-who-has-time-to-read.jpg" alt="A wall of Claude text and the question: but who has time to read all this?"><br><sub>Claude's replies can get long.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/02-ask-out-loud.jpg" alt="The Jarvis panel beside the chat, speaking its answer"><br><sub>Ask Jarvis about the session, out loud.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/03-you-approve.jpg" alt="A draft command for the session with Send to session and Discard"><br><sub>Jarvis drafts the request; nothing is sent until you approve.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/04-beside-your-session.jpg" alt="The chat and the Jarvis panel side by side"><br><sub>It talks beside your session, so it doesn't use up its memory.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/05-on-your-mac.jpg" alt="The orb with: listens and speaks on your Mac, thinks with your own Claude plan, no API key"><br><sub>Listens and speaks on your Mac, thinks with your own Claude plan.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/06-knows-the-session.jpg" alt="The web research setting: Jarvis may search the web"><br><sub>Knows the whole session, and can look things up on the web.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/07-make-it-yours.jpg" alt="Settings with instructions and the voice picker"><br><sub>Your own instructions, and the voice you like.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/08-stop-reading-start-talking.jpg" alt="Open Jarvis Talk. Stop reading. Start talking."><br><sub>Stop reading. Start talking.</sub></td>
+</tr>
+</table>
+
+<details>
+<summary><b>Step by step, with notes</b></summary>
+
+These annotated pictures are illustrations of the Claude desktop app. The plugin's parts (the 🎙️, the panel, the orb, the buttons and their wording) are drawn from its code; the conversation shown is an example.
 
 **1. Press 🎙️ to start.** It sits at the start of the footer under the message box.
 
@@ -39,6 +72,8 @@ These are illustrations of the Claude desktop app. The plugin's parts (the 🎙�
 **6. Settings.** Your own instructions, reply style, voice and speed with a test button, listening language and more.
 
 ![The settings screen with instructions, voice, speed, Test voice and Save](docs/screenshots/06-settings.png)
+
+</details>
 
 ## Requirements
 

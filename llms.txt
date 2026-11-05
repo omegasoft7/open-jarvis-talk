@@ -1,0 +1,15 @@
+# Open Jarvis Talk
+
+> A voice companion plugin for Claude Code on macOS. Press the 🎙️ in the footer and talk to Jarvis, a human-like voice beside your session, instead of reading long replies. Jarvis knows the session, can search the web, answers the way you tell it to, and drafts requests for the session that you approve before they are sent. Listening and speaking run on your Mac; it thinks with your own Claude plan, so no API key is needed.
+
+## Docs
+
+- [README](README.md): what it does, requirements, install, settings, privacy
+- [Intro video transcript](docs/video/transcript.md): the 48-second intro, line by line with timestamps and a scene-by-scene description
+- [Intro video captions](docs/video/open-jarvis-talk-intro.vtt): WebVTT captions for the intro video
+- [Intro video](docs/video/open-jarvis-talk-intro.mp4): 48 s, 1080p
+
+## Install
+
+- `claude plugin marketplace add omegasoft7/open-jarvis-talk`
+- `claude plugin install open-jarvis-talk@open-jarvis-talk`
