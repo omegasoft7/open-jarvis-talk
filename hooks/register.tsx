@@ -112,7 +112,7 @@ async function research($: EngineInterface, question: string): Promise<string> {
 }
 
 /** Asks Jarvis; resolves the reply's text (null when there was none). */
-async function ask($: EngineInterface, question: string, isVoice = false): Promise<string | null> {
+async function askJarvis($: EngineInterface, question: string, isVoice: boolean): Promise<string | null> {
   if ((await read($, busy)) !== null) return null
 
   await update($, chat, list => [...list, { role: 'you' as const, text: question, isVoice }])
@@ -146,7 +146,8 @@ async function ask($: EngineInterface, question: string, isVoice = false): Promi
         const topic = (wanted[1] ?? '').trim()
         await update($, busy, () => `Researching: ${topic}`)
         await update($, chat, list => [...list, note(`Researching: ${topic}`)])
-        findings.push(`Q: ${topic}\nA: ${await research($, topic)}`)
+        const answer = await research($, topic)
+        findings.push(`Q: ${topic}\nA: ${answer}`)
         await update($, busy, () => 'Thinking…')
         continue
       }
@@ -463,7 +464,7 @@ async function talkLoop($: EngineInterface): Promise<void> {
     }
 
     await update($, talk, () => 'thinking')
-    const reply = await ask($, said, true)
+    const reply = await askJarvis($, said, true)
     if (talkToken !== mine) return
     if (reply) {
       await update($, talk, () => 'speaking')
@@ -1136,7 +1137,7 @@ export const register: Register = on => {
                 key={`s${index}`}
                 label={text}
                 dimColor
-                onPress={() => void ask($, text)}
+                onPress={() => askJarvis($, text, false)}
               />
             ))}
           </Box>
@@ -1198,7 +1199,7 @@ export const register: Register = on => {
               const question = value.trim()
               if (!question) return
               void update($, field, n => n + 1)
-              void ask($, question)
+              void askJarvis($, question, false)
             }}
           />
         ) : (

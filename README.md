@@ -87,12 +87,47 @@ The voices are:
 - American: `af_heart`, `af_bella`, `af_nicole`, `af_sarah`, `af_sky`, `am_michael`, `am_adam`, `am_eric`, `am_liam`, `am_onyx` and more.
 - British: `bf_emma`, `bf_isabella`, `bf_alice`, `bf_lily`, `bm_george`, `bm_fable`, `bm_daniel`, `bm_lewis`.
 
-## Privacy
+## What it runs, reads and sends
 
-- **Speech recognition** uses macOS speech recognition, which runs on your Mac when it can.
-- **The voice** runs on your Mac.
-- **Your questions** go to Claude through your Claude Code session, the same way your messages to Claude do.
-- **Web research** uses a separate `claude -p` run that can only search and fetch web pages.
+This is the full list, for users and reviewers.
+
+**What it sends, and where**
+
+- **Your questions, to Claude.** When you ask something, the plugin sends your question and the conversation so far to Claude. It uses your own Claude Code session's model call, the same way the session itself talks to Claude. Claude also sees the session's transcript, so it can answer about the session. Nothing else is sent.
+- **Research questions, to Claude with web search.** When Claude asks for web research, the plugin runs your own `claude` command line tool (`claude -p`). Only web search and web fetch are allowed, and file editing and shell tools are blocked. The question goes in, and the findings come back.
+- **Commands you approve, into the session.** A drafted command is submitted to the session as your message only when you press **Send to session** or say "send it". What's submitted is exactly the draft text shown on screen.
+- **Nothing is uploaded during setup.** Setup only downloads, and only after you press **Install**:
+  - uv, from `github.com/astral-sh/uv`
+  - Python 3.12 and the Python packages in [`voice/requirements.txt`](voice/requirements.txt), installed by uv from PyPI
+  - the voice model, from `github.com/thewh1teagle/kokoro-onnx`
+
+  The uv and voice model downloads are checked against fixed SHA-256 checksums, and the Python packages are pinned to exact versions. The setup script runs the uv it downloads, which is why the directory reports it as a download-and-run command.
+- **Audio stays on your Mac.** Your voice is turned into text by macOS speech recognition, which runs on your Mac when it can. The spoken replies are made on your Mac.
+
+**What it reads**
+
+- The current session's conversation, so Claude can answer about it.
+- Its own files in `~/.claude/jarvis`: the voice setting, the listener, the voice engine and its logs.
+- Nothing else. It reads no passwords, keys or tokens. Research uses your own `claude` tool with your own Claude login, the same as when you run it yourself.
+
+**Programs it starts, and why**
+
+| Program | Why |
+| --- | --- |
+| `~/.claude/jarvis/jarvis-listen` | Listens to the microphone and prints what you said as text. Built at setup from [`voice/listen.swift`](voice/listen.swift). |
+| `~/.claude/jarvis/kokoro/bin/python ~/.claude/jarvis/speak.py` | Speaks Jarvis's replies in the natural voice. The script is [`voice/speak.py`](voice/speak.py). |
+| `/usr/bin/say` | Speaks replies in the built-in Mac voice if the natural voice isn't installed or fails. |
+| `/bin/kill` | Stops the listener or the voice at once when you press **Interrupt**, **Pause** or **End conversation**. |
+| `/bin/bash setup/jarvis-setup.sh check`, `install`, `tools` and `dictation` | Setup: checks the Mac, installs on **Install**, opens Apple's Command Line Tools installer, or opens the Dictation settings. |
+| `/bin/zsh -c` with short fixed scripts | Starts the listener and voices so each prints its process id first, and adds a line to `~/.claude/jarvis/jarvis.log`. The scripts are the `LISTEN`, `KOKORO` and `SAY` constants and the `jlog` function in [`hooks/register.tsx`](hooks/register.tsx). |
+| `claude -p`, started through a login shell so it can be found | Web research, as described above. |
+
+**Hooks**
+
+- `command.run` answers only the plugin's own two commands, `/open-jarvis-talk` and `/open-jarvis-talk-chat`.
+- `ui.close` reacts only when one of its own two panes closes: it stops listening and speaking.
+- `ui.render` draws the 🎙️ in the footer under the message box and the plugin's own panes. The mode labels that footer already shows are kept as they were.
+- `session.start` resets the conversation state and registers the two commands.
 
 ## Remove
 
