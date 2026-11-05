@@ -791,3 +791,120 @@ test('tapping while thinking stops: the late answer is dropped and it listens ag
   expect(await after.find({ type: 'Text', text: /A late answer/ })).toBeUndefined()
   await after.unmount()
 })
+
+test('settings: ⚙ opens them, the conversation pauses; saved choices reach voice, listening and answers', async ($, on) => {
+  mock.clock(on)
+  mock.store(on)
+  const listens: (readonly string[])[] = []
+  const speaks: (readonly string[])[] = []
+  const asked: string[] = []
+  let releaseFirst = () => {}
+  const firstListenerKilled = new Promise<void>(resolve => {
+    releaseFirst = resolve
+  })
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', (_, e) => {
+    if (isSetup(e.argv)) return checked()
+    if (e.argv[0] === '/bin/kill') releaseFirst()
+
+    return RAN
+  })
+  on('model.fork', (_, e) => {
+    asked.push(e.prompt)
+
+    return { value: { isAnswered: true, text: 'Sure.', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      speaks.push(e.argv)
+      yield KOKORO_SPOKE
+    } else {
+      listens.push(e.argv)
+      if (listens.length === 1) {
+        yield { stream: 'stdout' as const, text: 'pid: 5151\nlistening\n' }
+        await firstListenerKilled
+      } else if (listens.length === 2) {
+        yield { stream: 'stdout' as const, text: 'listening\npartial: hello\nfinal: hello\n' }
+      } else {
+        yield { stream: 'stdout' as const, text: 'error: done for this test\n' }
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  for (let wait = 0; wait < 80 && listens.length < 1; wait++) await Promise.resolve()
+  expect(listens[0]?.slice(4)).toEqual(['en-US', '3'])
+
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  await voice.press({ key: 'open-settings' })
+  expect((await voice.find({ type: 'Text', text: /^Settings$/ }))?.text).toBe('Settings')
+  await voice.input({ key: 'settings-instructions', text: 'Answer in simple words.', kind: 'change' })
+  await voice.select({ key: 'settings-voice', value: 'am_michael' })
+  await voice.select({ key: 'settings-speed', value: '1.25' })
+  await voice.select({ key: 'settings-locale', value: 'en-GB' })
+  await voice.select({ key: 'settings-pause', value: '2' })
+
+  await voice.press({ key: 'settings-test' })
+  expect(speaks[0]?.[4]).toContain("Hi, I'm Michael")
+  expect(speaks[0]?.slice(5, 7)).toEqual(['am_michael', '1.25'])
+
+  await voice.press({ key: 'settings-save' })
+  for (let wait = 0; wait < 80 && listens.length < 3; wait++) await Promise.resolve()
+  await voice.unmount()
+
+  expect(listens[1]?.slice(4)).toEqual(['en-GB', '2'])
+  expect(asked[0]).toContain('Answer in simple words.')
+  expect(speaks[1]?.[4]).toBe('Sure.')
+  expect(speaks[1]?.slice(5, 7)).toEqual(['am_michael', '1.25'])
+})
+
+test('settings: research off, text-only replies, and the Mac voice at the chosen speed', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  const speaks: (readonly string[])[] = []
+  const asked: string[] = []
+  let rounds = 0
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', runReady)
+  on('model.fork', (_, e) => {
+    asked.push(e.prompt)
+
+    return { value: { isAnswered: true, text: 'Done.', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      speaks.push(e.argv)
+      yield { stream: 'stdout' as const, text: 'pid: 9004\n' }
+    } else {
+      rounds += 1
+      yield {
+        stream: 'stdout' as const,
+        text: rounds === 1 ? 'listening\npartial: hi\nfinal: hi\n' : 'error: done for this test\n',
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk-chat', args: '' })
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  await voice.press({ key: 'open-settings' })
+  await voice.select({ key: 'settings-engine', value: 'mac' })
+  expect(await voice.find({ type: 'Select', key: 'settings-voice' })).toBeUndefined()
+  await voice.select({ key: 'settings-speed', value: '1.25' })
+  await voice.select({ key: 'settings-research', value: 'off' })
+  await voice.press({ key: 'settings-test' })
+  expect(isMacSay(speaks[0] ?? [])).toBe(true)
+  expect(speaks[0]?.[6]).toBe('219')
+  await voice.select({ key: 'settings-speak', value: 'off' })
+  await voice.press({ key: 'settings-save' })
+  await voice.unmount()
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.settle()
+  expect(asked[0]).toContain('Web research is turned off')
+  expect(asked[0]).not.toContain('<research>')
+  expect(speaks.length).toBe(1) // only the test; replies are text only
+})

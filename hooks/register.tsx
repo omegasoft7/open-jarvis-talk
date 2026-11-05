@@ -1,16 +1,14 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { ChatEntry, Setup, SetupCheck, TalkState } from '../types'
+import type { ChatEntry, ReplyStyle, JarvisSettings, Setup, SetupCheck, TalkState } from '../types'
 
 const PANE = 'jarvis'
 const TITLE = 'Open Jarvis Talk · Chat'
 const MAX_RESEARCH_ROUNDS = 2
-const LANGUAGE = 'en-US'
+// $1 the listening language, $2 the seconds of silence that end what you say.
 const LISTEN =
-  'exec "$HOME/.claude/jarvis/jarvis-listen" --locale ' +
-  LANGUAGE +
-  ' 2>>"$HOME/.claude/jarvis/listen.log"'
+  'exec "$HOME/.claude/jarvis/jarvis-listen" --locale "$1" --pause "$2" 2>>"$HOME/.claude/jarvis/listen.log"'
 
 /** Appends one line to ~/.claude/jarvis/jarvis.log; never fails the caller. */
 function jlog($: EngineInterface, line: string): void {
@@ -36,6 +34,111 @@ const talk = atom({ plugin: 'open-jarvis-talk', key: 'talk' } as const, 'off' as
 const heard = atom({ plugin: 'open-jarvis-talk', key: 'heard' } as const, '')
 const setup = atom({ plugin: 'open-jarvis-talk', key: 'setup' } as const, null as Setup | null)
 
+// ---- Settings --------------------------------------------------------------
+// Chosen on the settings screen (the ⚙ at the top of the conversation), kept
+// in $.store across sessions and mirrored into an atom the rest reads.
+
+type Choice = { value: string; label: string }
+
+const REPLY_STYLES: readonly Choice[] = [
+  { value: 'brief', label: 'Brief' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'detailed', label: 'Detailed' },
+  { value: 'simple', label: 'Simple words' },
+]
+const ENGINES: readonly Choice[] = [
+  { value: 'natural', label: 'Natural voice (Kokoro)' },
+  { value: 'mac', label: 'Mac voice' },
+]
+const VOICE_NAMES: Record<string, string> = {
+  af: 'US female', am: 'US male', bf: 'British female', bm: 'British male',
+}
+const VOICE_IDS = [
+  'af_heart', 'af_bella', 'af_nicole', 'af_alloy', 'af_aoede', 'af_jessica', 'af_kore', 'af_nova',
+  'af_river', 'af_sarah', 'af_sky', 'am_michael', 'am_adam', 'am_echo', 'am_eric', 'am_fenrir',
+  'am_liam', 'am_onyx', 'am_puck', 'am_santa', 'bf_emma', 'bf_alice', 'bf_isabella', 'bf_lily',
+  'bm_george', 'bm_daniel', 'bm_fable', 'bm_lewis',
+]
+const BEST_VOICES = new Set(['af_heart', 'af_bella'])
+function voiceName(id: string): string {
+  const name = id.slice(3)
+
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+const VOICES: readonly Choice[] = VOICE_IDS.map(id => ({
+  value: id,
+  label: `${voiceName(id)} · ${VOICE_NAMES[id.slice(0, 2)] ?? ''}${BEST_VOICES.has(id) ? ' · best' : ''}`,
+}))
+const SPEEDS: readonly Choice[] = ['0.8', '0.9', '1.0', '1.1', '1.25', '1.5'].map(speed => ({
+  value: speed,
+  label: `${speed}×`,
+}))
+const LOCALES: readonly Choice[] = [
+  { value: 'en-US', label: 'English (US)' },
+  { value: 'en-GB', label: 'English (UK)' },
+  { value: 'en-AU', label: 'English (Australia)' },
+  { value: 'en-CA', label: 'English (Canada)' },
+  { value: 'en-IN', label: 'English (India)' },
+  { value: 'de-DE', label: 'German' },
+  { value: 'fr-FR', label: 'French' },
+  { value: 'es-ES', label: 'Spanish (Spain)' },
+  { value: 'es-MX', label: 'Spanish (Mexico)' },
+  { value: 'it-IT', label: 'Italian' },
+  { value: 'pt-BR', label: 'Portuguese (Brazil)' },
+  { value: 'nl-NL', label: 'Dutch' },
+  { value: 'ja-JP', label: 'Japanese' },
+  { value: 'zh-CN', label: 'Chinese (Mandarin)' },
+  { value: 'ko-KR', label: 'Korean' },
+]
+const PAUSES: readonly Choice[] = ['1.5', '2', '3', '4', '5'].map(seconds => ({
+  value: seconds,
+  label: `${seconds} s`,
+}))
+const ON_OFF = (on: string, off: string): readonly Choice[] => [
+  { value: 'on', label: on },
+  { value: 'off', label: off },
+]
+const MAX_INSTRUCTIONS = 2000
+
+const DEFAULTS: JarvisSettings = {
+  instructions: '',
+  replyStyle: 'brief',
+  engine: 'natural',
+  voice: 'af_heart',
+  speed: '1.0',
+  locale: 'en-US',
+  pause: '3',
+  research: true,
+  speakReplies: true,
+}
+
+/** A stored value, each field checked against what the screen offers. */
+function settingsFrom(raw: unknown): JarvisSettings {
+  const got = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {}
+  const pick = (key: string, among: readonly Choice[], fallback: string): string => {
+    const value = got[key]
+
+    return typeof value === 'string' && among.some(one => one.value === value) ? value : fallback
+  }
+
+  return {
+    instructions:
+      typeof got.instructions === 'string' ? got.instructions.slice(0, MAX_INSTRUCTIONS) : DEFAULTS.instructions,
+    replyStyle: pick('replyStyle', REPLY_STYLES, DEFAULTS.replyStyle) as ReplyStyle,
+    engine: pick('engine', ENGINES, DEFAULTS.engine) === 'mac' ? 'mac' : 'natural',
+    voice: pick('voice', VOICES, DEFAULTS.voice),
+    speed: pick('speed', SPEEDS, DEFAULTS.speed),
+    locale: pick('locale', LOCALES, DEFAULTS.locale),
+    pause: pick('pause', PAUSES, DEFAULTS.pause),
+    research: typeof got.research === 'boolean' ? got.research : DEFAULTS.research,
+    speakReplies: typeof got.speakReplies === 'boolean' ? got.speakReplies : DEFAULTS.speakReplies,
+  }
+}
+
+const settings = atom({ plugin: 'open-jarvis-talk', key: 'settings' } as const, DEFAULTS)
+/** The settings being edited; null when the settings screen is closed. */
+const settingsDraft = atom({ plugin: 'open-jarvis-talk', key: 'settingsDraft' } as const, null as JarvisSettings | null)
+
 const SUGGESTIONS = [
   'Brief me on this session',
   'What is it doing right now?',
@@ -43,22 +146,51 @@ const SUGGESTIONS = [
   'What should we do next?',
 ]
 
-const RULES = `[Jarvis side channel. This is NOT a turn of this session.]
+const STYLE_TEXT: Record<ReplyStyle, string> = {
+  brief: 'Be brief and plain: short paragraphs or a few bullets, no filler.',
+  normal: 'Be clear and plain: a few short paragraphs or bullets, no filler.',
+  detailed: 'Be thorough: explain the important details and reasons, in clear paragraphs or bullets.',
+  simple: 'Use simple everyday words, no jargon, and keep it short.',
+}
+const STYLE_VOICE: Record<ReplyStyle, string> = {
+  brief: 'one to three short spoken sentences',
+  normal: 'a few short spoken sentences',
+  detailed: 'up to about eight spoken sentences that cover the important details',
+  simple: 'one to three short spoken sentences in simple everyday words',
+}
+
+function rules(chosen: JarvisSettings): string {
+  return `[Jarvis side channel. This is NOT a turn of this session.]
 The user opened "Jarvis", a side assistant next to this session. For this reply only, you are Jarvis:
 - You are an observer. You cannot run tools, and nothing you write reaches the session's agent.
 - Answer about THIS session (the conversation above): what it is doing, why, what happened, what is next.
-- Be brief and plain: short paragraphs or a few bullets, no filler.
-- If you truly need facts from the web to answer, reply with ONLY <research>one precise question</research> and nothing else. You will get the findings back.
-- When the user wants the session to do something ("let's do X", "tell it to..."), write the message the session's agent should receive inside ONE <command>...</command> block, as clear instructions to that agent, plus one line saying what it will do. The user approves it before it is sent.
+- ${STYLE_TEXT[chosen.replyStyle]}
+${
+  chosen.research
+    ? '- If you truly need facts from the web to answer, reply with ONLY <research>one precise question</research> and nothing else. You will get the findings back.\n'
+    : '- Web research is turned off: answer from what you know and say so when you are unsure.\n'
+}- When the user wants the session to do something ("let's do X", "tell it to..."), write the message the session's agent should receive inside ONE <command>...</command> block, as clear instructions to that agent, plus one line saying what it will do. The user approves it before it is sent.
 - Never claim you did something in the session yourself.`
+}
 
-const VOICE_RULES = `
-The user is TALKING to you by voice and your reply is read aloud: answer in one to three short spoken sentences, plain text only (no markdown, lists, code or URLs). The <research> and <command> rules still apply; when you draft a command, say in one sentence what it will do.`
+function voiceRules(chosen: JarvisSettings): string {
+  return `
+The user is TALKING to you by voice and your reply is read aloud: answer in ${STYLE_VOICE[chosen.replyStyle]}, plain text only (no markdown, lists, code or URLs). The <command> rule still applies; when you draft a command, say in one sentence what it will do.`
+}
+
+function ownInstructions(chosen: JarvisSettings): string {
+  const text = chosen.instructions.trim()
+
+  return text
+    ? `\n\nThe user's own standing instructions for how Jarvis answers (follow them unless they conflict with the rules above):\n${text}`
+    : ''
+}
 
 function buildPrompt(
   history: readonly ChatEntry[],
   findings: readonly string[],
   isVoice: boolean,
+  chosen: JarvisSettings,
 ): string {
   const lines = history.map(entry =>
     entry.role === 'you'
@@ -71,7 +203,7 @@ function buildPrompt(
     ? `\n\nResearch findings for this question:\n${findings.join('\n\n')}`
     : ''
 
-  return `${RULES}${isVoice ? VOICE_RULES : ''}\n\nJarvis conversation so far:\n${lines.join('\n')}${researchText}\n\nReply as Jarvis to the user's last message.`
+  return `${rules(chosen)}${isVoice ? voiceRules(chosen) : ''}${ownInstructions(chosen)}\n\nJarvis conversation so far:\n${lines.join('\n')}${researchText}\n\nReply as Jarvis to the user's last message.`
 }
 
 function note(text: string): ChatEntry {
@@ -123,10 +255,12 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
   jlog($, `ask voice=${isVoice} q=${JSON.stringify(question.slice(0, 200))}`)
 
   try {
+    const chosen = await read($, settings)
+    const maxRounds = chosen.research ? MAX_RESEARCH_ROUNDS : 0
     const findings: string[] = []
-    for (let round = 0; round <= MAX_RESEARCH_ROUNDS; round++) {
+    for (let round = 0; round <= maxRounds; round++) {
       const history = await read($, chat)
-      const reply = await $.model.fork({ prompt: buildPrompt(history, findings, isVoice) })
+      const reply = await $.model.fork({ prompt: buildPrompt(history, findings, isVoice, chosen) })
       if (ticket !== askToken) {
         jlog($, 'answer dropped: stopped while thinking')
 
@@ -149,7 +283,7 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
       const text = reply.text.trim()
       jlog($, `fork answered ${text.length}ch research=${/<research>/.test(text)} command=${/<command>/.test(text)}`)
       const wanted = /^\s*<research>([\s\S]*?)<\/research>\s*$/.exec(text)
-      if (wanted && round < MAX_RESEARCH_ROUNDS) {
+      if (wanted && round < maxRounds) {
         const topic = (wanted[1] ?? '').trim()
         await update($, busy, () => `Researching: ${topic}`)
         await update($, chat, list => [...list, note(`Researching: ${topic}`)])
@@ -276,7 +410,8 @@ function watchPane($: EngineInterface): void {
 
 /** Listens once: the words heard, '' for silence, null on an error. */
 async function listenOnce($: EngineInterface, mine: number): Promise<string | null> {
-  const stream = $.process.spawn({ argv: ['/bin/zsh', '-c', LISTEN] })
+  const chosen = await read($, settings)
+  const stream = $.process.spawn({ argv: ['/bin/zsh', '-c', LISTEN, 'jarvis-listen', chosen.locale, chosen.pause] })
   const me: Child = { stream: stream as unknown as Stream }
   listener = me
   let pending = ''
@@ -357,8 +492,10 @@ const NO_KOKORO = 'natural voice not installed'
 const KOKORO =
   'echo "pid: $$"; [ -x "$HOME/.claude/jarvis/kokoro/bin/python" ] || { echo "error: ' +
   NO_KOKORO +
-  '"; exit 3; }; exec "$HOME/.claude/jarvis/kokoro/bin/python" -I "$HOME/.claude/jarvis/speak.py" -- "$1"'
-const SAY = 'echo "pid: $$"; exec /usr/bin/say -- "$1"'
+  '"; exit 3; }; exec "$HOME/.claude/jarvis/kokoro/bin/python" -I "$HOME/.claude/jarvis/speak.py" --voice "$2" --speed "$3" -- "$1"'
+// $1 the words, $3 the rate in words a minute ($2 unused, as Kokoro's voice).
+const SAY = 'echo "pid: $$"; exec /usr/bin/say -r "$3" -- "$1"'
+const MAC_WORDS_PER_MINUTE = 175
 
 type Spoken = { isDone: boolean; isStopped: boolean; why: string }
 
@@ -368,8 +505,11 @@ async function speakWith(
   words: string,
   mine: number,
   printsDone: boolean,
+  how: { voice: string; speed: string },
 ): Promise<Spoken> {
-  const stream = $.process.spawn({ argv: ['/bin/zsh', '-c', script, 'jarvis-say', words] })
+  const stream = $.process.spawn({
+    argv: ['/bin/zsh', '-c', script, 'jarvis-say', words, how.voice, how.speed],
+  })
   const me: Child = { stream: stream as unknown as Stream }
   speaker = me
   let isDone = !printsDone // `say` prints nothing: ending without a throw is done
@@ -405,16 +545,31 @@ async function speakWith(
   return { isDone, isStopped, why }
 }
 
+/** Speaks in the chosen voice: Kokoro, else the Mac voice. */
+async function speakAs(
+  $: EngineInterface,
+  words: string,
+  mine: number,
+  chosen: JarvisSettings,
+): Promise<void> {
+  const macRate = String(Math.round(MAC_WORDS_PER_MINUTE * Number(chosen.speed)))
+  if (chosen.engine === 'natural') {
+    const kokoro = await speakWith($, KOKORO, words, mine, true, { voice: chosen.voice, speed: chosen.speed })
+    if (kokoro.isDone || kokoro.isStopped) return
+    // Skipped at setup: the Mac voice is the choice, not a failure worth a log line.
+    if (kokoro.why !== NO_KOKORO) jlog($, `Kokoro voice failed, falling back to macOS say: ${kokoro.why}`)
+  }
+  const fallback = await speakWith($, SAY, words, mine, false, { voice: '', speed: macRate })
+  if (!fallback.isDone && !fallback.isStopped) jlog($, `say failed too: ${fallback.why}`)
+}
+
 async function speak($: EngineInterface, text: string, mine: number): Promise<void> {
   const words = speakable(text)
   if (!words || talkToken !== mine) return
+  const chosen = await read($, settings)
+  if (!chosen.speakReplies) return
   jlog($, `speak ${words.length}ch`)
-  const kokoro = await speakWith($, KOKORO, words, mine, true)
-  if (kokoro.isDone || kokoro.isStopped) return
-  // Skipped at setup: the Mac voice is the choice, not a failure worth a log line.
-  if (kokoro.why !== NO_KOKORO) jlog($, `Kokoro voice failed, falling back to macOS say: ${kokoro.why}`)
-  const fallback = await speakWith($, SAY, words, mine, false)
-  if (!fallback.isDone && !fallback.isStopped) jlog($, `say failed too: ${fallback.why}`)
+  await speakAs($, words, mine, chosen)
 }
 
 const SEND = /^(yes|yeah|yep|ok|okay)?[\s,.!]*(send( it)?|approve( it)?|go ahead|do it)[\s.!]*$/i
@@ -963,6 +1118,179 @@ const STATE_WORDS: Record<TalkState, string> = {
   paused: 'Paused',
 }
 
+// ---- Settings screen -------------------------------------------------------
+
+/** Set when opening settings paused a conversation, so leaving resumes it. */
+let resumeAfterSettings = false
+
+async function loadSettings($: EngineInterface): Promise<void> {
+  const saved = await $.store.get('settings').catch(() => undefined)
+  await update($, settings, () => settingsFrom(saved))
+}
+
+/** Opens the settings in the conversation pane; a running conversation
+ * pauses, so it does not hear a voice test. */
+async function openSettings($: EngineInterface): Promise<void> {
+  resumeAfterSettings = isActive(await read($, talk))
+  if (resumeAfterSettings) await stopTalking($, 'paused', 'settings opened')
+  const current = await read($, settings)
+  await update($, settingsDraft, () => ({ ...current }))
+}
+
+async function closeSettings($: EngineInterface): Promise<void> {
+  kill($, 'speaker')
+  await update($, settingsDraft, () => null)
+  if (resumeAfterSettings) {
+    resumeAfterSettings = false
+    void talkLoop($)
+  }
+}
+
+async function saveSettings($: EngineInterface): Promise<void> {
+  const edited = await read($, settingsDraft)
+  if (edited === null) return
+  const chosen = settingsFrom(edited)
+  await $.store.set('settings', chosen)
+  await update($, settings, () => chosen)
+  jlog($, `settings saved style=${chosen.replyStyle} engine=${chosen.engine} voice=${chosen.voice} speed=${chosen.speed} locale=${chosen.locale} pause=${chosen.pause} research=${chosen.research} speak=${chosen.speakReplies} instructions=${chosen.instructions.length}ch`)
+  await update($, chat, list => [...list, note('Settings saved.')])
+  await closeSettings($)
+}
+
+async function editSettings($: EngineInterface, change: Partial<JarvisSettings>): Promise<void> {
+  await update($, settingsDraft, now => (now === null ? now : { ...now, ...change }))
+}
+
+/** Plays a sample in the voice and speed being edited. */
+async function testVoice($: EngineInterface): Promise<void> {
+  const edited = await read($, settingsDraft)
+  if (edited === null) return
+  kill($, 'speaker')
+  const name = edited.engine === 'natural' ? voiceName(edited.voice) : 'the Mac voice'
+  jlog($, `voice test ${edited.engine} ${edited.voice} ${edited.speed}`)
+  await speakAs($, `Hi, I'm ${name}. This is how I would sound as Jarvis.`, talkToken, edited)
+}
+
+function settingsScreen(
+  $: EngineInterface,
+  els: ReturnType<EngineInterface['ui']['resolve']>,
+  edited: JarvisSettings,
+) {
+  const { Box, Text, Button } = els
+  const Input = 'Input' in els ? els.Input : undefined
+  const Select = 'Select' in els ? els.Select : undefined
+  if (!Input || !Select) {
+    return (
+      <Box flexDirection="column" gap={1} paddingY={1}>
+        <Text bold>Settings</Text>
+        <Text dimColor>Settings can be changed in the Claude desktop app or the terminal.</Text>
+        <Button key="settings-back" label="Back" onPress={() => closeSettings($)} />
+      </Box>
+    )
+  }
+  const field = (label: string, hint?: string) => (
+    <Box flexDirection="column">
+      <Text bold>{label}</Text>
+      {hint !== undefined && <Text dimColor>{hint}</Text>}
+    </Box>
+  )
+
+  return (
+    <Box flexDirection="column" gap={1} paddingY={1}>
+      <Box justifyContent="space-between" alignItems="center">
+        <Text bold>Settings</Text>
+        <Button key="settings-back" label="← Back" plain dimColor onPress={() => closeSettings($)} />
+      </Box>
+
+      {field('Instructions for Jarvis', 'Followed in every answer, for example: answer in simple words and keep it brief.')}
+      <Input
+        key="settings-instructions"
+        rows={4}
+        placeholder="Your own instructions for how Jarvis answers"
+        value={edited.instructions}
+        onInput={value => editSettings($, { instructions: value.slice(0, MAX_INSTRUCTIONS) })}
+        onSubmit={value => editSettings($, { instructions: value.slice(0, MAX_INSTRUCTIONS) })}
+      />
+
+      {field('Reply style')}
+      <Select
+        key="settings-style"
+        options={REPLY_STYLES}
+        value={edited.replyStyle}
+        onSelect={value => editSettings($, { replyStyle: settingsFrom({ replyStyle: value }).replyStyle })}
+      />
+
+      {field('Voice')}
+      <Select
+        key="settings-engine"
+        options={ENGINES}
+        value={edited.engine}
+        onSelect={value => editSettings($, { engine: value === 'mac' ? 'mac' : 'natural' })}
+      />
+      {edited.engine === 'natural' && (
+        <Select
+          key="settings-voice"
+          options={VOICES}
+          value={edited.voice}
+          onSelect={value => editSettings($, { voice: settingsFrom({ voice: value }).voice })}
+        />
+      )}
+
+      {field('Speed')}
+      <Select
+        key="settings-speed"
+        options={SPEEDS}
+        value={edited.speed}
+        onSelect={value => editSettings($, { speed: settingsFrom({ speed: value }).speed })}
+      />
+      <Button key="settings-test" label="▶ Test voice" onPress={() => testVoice($)} />
+
+      {field('Listening language')}
+      <Select
+        key="settings-locale"
+        options={LOCALES}
+        value={edited.locale}
+        onSelect={value => editSettings($, { locale: settingsFrom({ locale: value }).locale })}
+      />
+
+      {field('Pause that ends what you say', 'Or tap “Listening…” to send at once.')}
+      <Select
+        key="settings-pause"
+        options={PAUSES}
+        value={edited.pause}
+        onSelect={value => editSettings($, { pause: settingsFrom({ pause: value }).pause })}
+      />
+
+      {field('Web research')}
+      <Select
+        key="settings-research"
+        options={ON_OFF('On: Jarvis may search the web', 'Off')}
+        value={edited.research ? 'on' : 'off'}
+        onSelect={value => editSettings($, { research: value === 'on' })}
+      />
+
+      {field('Replies')}
+      <Select
+        key="settings-speak"
+        options={ON_OFF('Spoken aloud', 'Text only')}
+        value={edited.speakReplies ? 'on' : 'off'}
+        onSelect={value => editSettings($, { speakReplies: value === 'on' })}
+      />
+
+      <Box gap={1}>
+        <Button key="settings-save" label="Save" variant="primary" onPress={() => saveSettings($)} />
+        <Button key="settings-cancel" label="Cancel" onPress={() => closeSettings($)} />
+        <Button
+          key="settings-reset"
+          label="Reset to defaults"
+          dimColor
+          onPress={() => update($, settingsDraft, () => ({ ...DEFAULTS }))}
+        />
+      </Box>
+    </Box>
+  )
+}
+
 /** What pressing the state under the orb does now, or null when nothing. */
 function tapHint(state: TalkState, hearing: string): string | null {
   if (state === 'listening') return hearing.trim() === '' ? null : 'tap to send now'
@@ -985,6 +1313,8 @@ export const register: Register = on => {
     await update($, talk, () => 'off')
     await update($, heard, () => '')
     await update($, setup, () => null)
+    await update($, settingsDraft, () => null)
+    await loadSettings($)
     await $.command.register({
       name: 'open-jarvis-talk-chat',
       description: 'Open Jarvis Talk: a typed side chat about this session',
@@ -1046,6 +1376,8 @@ export const register: Register = on => {
     const Svg = 'Svg' in els ? els.Svg : undefined
     const view = await read($, setup)
     if (view !== null) return setupScreen($, els, view)
+    const edited = await read($, settingsDraft)
+    if (edited !== null) return settingsScreen($, els, edited)
     const state = await read($, talk)
     const hearing = await read($, heard)
     const pending = await read($, draft)
@@ -1053,6 +1385,9 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column" gap={1} paddingY={1}>
+        <Box justifyContent="flex-end">
+          <Button key="open-settings" label="⚙" plain dimColor onPress={() => openSettings($)} />
+        </Box>
         {list.length === 0 && (
           <Text dimColor>Start talking. What you both say stays here to scroll back through.</Text>
         )}

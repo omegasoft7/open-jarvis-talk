@@ -27,6 +27,27 @@ export type Setup = {
   error: string
 }
 
+export type ReplyStyle = 'brief' | 'normal' | 'detailed' | 'simple'
+
+/** What the person chose on the settings screen; kept across sessions. */
+export type JarvisSettings = {
+  /** The person's own standing instructions for Jarvis's answers. */
+  instructions: string
+  replyStyle: ReplyStyle
+  /** 'natural' is Kokoro; 'mac' is the built-in Mac voice (`say`). */
+  engine: 'natural' | 'mac'
+  /** A Kokoro voice id, such as af_heart. */
+  voice: string
+  /** Speech speed, as text: '0.8' to '1.5'. */
+  speed: string
+  /** The listening language, an Apple locale such as en-US. */
+  locale: string
+  /** Seconds of silence that end what you say, as text. */
+  pause: string
+  research: boolean
+  speakReplies: boolean
+}
+
 declare module 'claude-code' {
   interface PluginState {
     'open-jarvis-talk': {
@@ -38,6 +59,8 @@ declare module 'claude-code' {
       talk: TalkState
       heard: string
       setup: Setup | null
+      settings: JarvisSettings
+      settingsDraft: JarvisSettings | null
     }
   }
 }

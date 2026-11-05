@@ -82,6 +82,7 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 ## Using it
 
 - **🎙️ in the footer under the message box** starts a conversation. The microphone icon is hidden while a conversation is running.
+- **⚙ at the top of the conversation** opens the [settings](#settings).
 - **Tap the words under the orb** ("Listening…", "Thinking…", "Speaking…"):
   - While you talk, a tap sends what you said right away, without waiting for the pause.
   - While Jarvis thinks or speaks, a tap stops it, and it listens to you again.
@@ -90,19 +91,23 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 - The whole conversation stays on the screen, so you can scroll back through it.
 - `/open-jarvis-talk` starts a conversation. `/open-jarvis-talk-chat` opens a typed side chat about the session.
 
-## Changing the voice
+## Settings
 
-The default voice is `af_heart`. To use another voice, write its name to `~/.claude/jarvis/voice`:
+Press **⚙** at the top of the conversation to open the settings. A running conversation pauses while they are open, and continues when you leave them. Press **Save** to keep your changes. They apply from the next answer and stay for every session.
 
-```bash
-echo bm_george > ~/.claude/jarvis/voice
-```
+| Setting | What it does | Default |
+|---|---|---|
+| Instructions for Jarvis | Your own instructions, followed in every answer. For example: "answer in simple words and keep it brief". Up to 2,000 characters. | none |
+| Reply style | Brief, Normal, Detailed, or Simple words. | Brief |
+| Voice | The natural voice (Kokoro) or the built-in Mac voice. For the natural voice, choose one of 28 English voices; Heart and Bella sound best. | Natural, Heart |
+| Speed | From 0.8× to 1.5×. | 1.0× |
+| ▶ Test voice | Plays a short sample in the voice and speed you chose. | |
+| Listening language | The language Apple's speech recognition listens for. | English (US) |
+| Pause that ends what you say | How long a silence sends what you said. You can also tap "Listening…" to send it at once. | 3 s |
+| Web research | Whether Jarvis may search the web to answer. | On |
+| Replies | Spoken aloud, or text only. | Spoken aloud |
 
-The next answer uses the new voice. Delete the file to go back to the default.
-
-The voices are:
-- American: `af_heart`, `af_bella`, `af_nicole`, `af_sarah`, `af_sky`, `am_michael`, `am_adam`, `am_eric`, `am_liam`, `am_onyx` and more.
-- British: `bf_emma`, `bf_isabella`, `bf_alice`, `bf_lily`, `bm_george`, `bm_fable`, `bm_daniel`, `bm_lewis`.
+Settings are saved in Claude Code's own storage for this plugin. **Reset to defaults** puts every setting back.
 
 ## What it runs, reads and sends
 
