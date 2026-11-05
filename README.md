@@ -3,11 +3,11 @@
 *A voice companion for Claude Code. Stop reading. Start talking.*
 
 <p align="center">
-  <a href="docs/video/open-jarvis-talk-intro.mp4"><img src="docs/video/preview.gif" alt="Open Jarvis Talk in 48 seconds: a wall of Claude text, tapping the 🎙️, talking with Jarvis, approving a request, and the settings" width="100%"></a>
+  <a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4"><img src="docs/video/preview.gif" alt="Open Jarvis Talk in 48 seconds: a wall of Claude text, tapping the 🎙️, talking with Jarvis, approving a request, and the settings" width="100%"></a>
 </p>
 
 <p align="center">
-  <b><a href="docs/video/open-jarvis-talk-intro.mp4">▶ Watch the 48-second intro with sound</a></b>
+  <b><a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4">▶ Watch the 48-second intro with sound</a></b>
   &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a>
 </p>
 

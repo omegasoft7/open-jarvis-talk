@@ -1,6 +1,6 @@
 # Open Jarvis Talk: intro video transcript
 
-The 48-second intro video: [open-jarvis-talk-intro.mp4](open-jarvis-talk-intro.mp4). Captions: [open-jarvis-talk-intro.vtt](open-jarvis-talk-intro.vtt).
+The 48-second intro video: [watch it in your browser](https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4) or get the file [open-jarvis-talk-intro.mp4](open-jarvis-talk-intro.mp4). Captions: [open-jarvis-talk-intro.vtt](open-jarvis-talk-intro.vtt).
 
 ## What the video says
 
