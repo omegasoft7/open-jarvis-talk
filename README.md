@@ -2,13 +2,10 @@
 
 *A voice companion for Claude Code. Stop reading. Start talking.*
 
-<p align="center">
-  <a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4"><img src="docs/video/preview.gif" alt="Open Jarvis Talk in 48 seconds: a wall of Claude text, tapping the 🎙️, talking with Jarvis, approving a request, and the settings" width="100%"></a>
-</p>
+https://github.com/user-attachments/assets/393fe769-4b24-481a-a66c-69ec1c4c324e
 
 <p align="center">
-  <b><a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4">▶ Watch the 48-second intro with sound</a></b>
-  &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a>
+  The 48-second intro, with sound. &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a> &nbsp;·&nbsp; <a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4">Open it in a new tab</a>
 </p>
 
 Talk to your Claude Code session out loud. Press the 🎙️ at the start of the footer under the message box and a conversation panel opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
