@@ -1,5 +1,5 @@
 #!/bin/bash
-# Jarvis setup: checks this Mac and installs what Jarvis's voice needs.
+# Open Jarvis Talk setup: checks this Mac and installs what its voice needs.
 #
 #   jarvis-setup.sh check                 what this Mac has, as key=value lines
 #   jarvis-setup.sh install [--no-voice]  install (the natural voice included

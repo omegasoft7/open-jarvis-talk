@@ -1,12 +1,14 @@
-# Jarvis for Claude Code
+# Open Jarvis Talk
 
-Talk to your Claude Code session out loud. Press the 🎙️ under the message box and a conversation screen opens. Ask Jarvis what the session is doing, why, or what to do next, and it answers in a natural voice. When you say something like "let's add tests", Jarvis drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
+*A voice companion for Claude Code.*
 
-- **Knows the session.** Jarvis reads the conversation you're in, so it can answer questions about it.
+Talk to your Claude Code session out loud. Press the 🎙️ under the message box and a conversation screen opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
+
+- **Knows the session.** It reads the conversation you're in, so it can answer questions about it.
 - **Hands-free.** It listens, answers, and listens again. A pause doesn't cut you off. Say "goodbye", or press **End conversation**, to stop.
-- **Natural voice, on your Mac.** Replies are spoken by [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a text-to-speech model that runs locally. If it isn't installed, Jarvis uses the built-in Mac voice.
-- **On-device speech recognition.** Jarvis uses macOS speech recognition.
-- **Web research when needed.** For questions that need the web, Jarvis runs a separate `claude -p` search and answers from what it finds.
+- **Natural voice, on your Mac.** Replies are spoken by [Kokoro](https://github.com/thewh1teagle/kokoro-onnx), a text-to-speech model that runs locally. If it isn't installed, the built-in Mac voice is used.
+- **On-device speech recognition.** It uses macOS speech recognition.
+- **Web research when needed.** For questions that need the web, it runs a separate `claude -p` search and answers from what it finds.
 - **You approve every command.** Drafts appear on screen with **Send to session** and **Discard** buttons.
 
 ## Requirements
@@ -15,33 +17,32 @@ Talk to your Claude Code session out loud. Press the 🎙️ under the message b
 - Claude Code: the desktop app or the terminal.
 - Dictation turned on, in System Settings > Keyboard > Dictation. macOS speech recognition needs it.
 - The first setup needs the Xcode Command Line Tools to build the small speech listener. Setup offers to install them.
-- The natural voice needs an Apple Silicon Mac with 8 GB of memory and about 600 MB of disk space. On other Macs, Jarvis uses the built-in Mac voice.
+- The natural voice needs an Apple Silicon Mac with 8 GB of memory and about 600 MB of disk space. On other Macs, the built-in Mac voice is used.
 
 ## Install
 
 At the prompt of a terminal Claude Code session:
 
 ```
-/plugin install jarvis --marketplace omegasoft7/claude-jarvis
+/plugin install open-jarvis-talk --marketplace omegasoft7/open-jarvis-talk
 ```
 
-Answer `y` to add the marketplace, then choose a scope. Use the user scope to have Jarvis in every session.
+Answer `y` to add the marketplace, then choose a scope. Use the user scope to have it in every session.
 
 From a shell:
 
 ```bash
-claude plugin install jarvis --marketplace omegasoft7/claude-jarvis
+claude plugin install open-jarvis-talk --marketplace omegasoft7/open-jarvis-talk
 ```
 
 In the Claude desktop app, where `/plugin` doesn't run:
 1. Click **+** next to the prompt box, then **Plugins**.
-2. Click **Add marketplace** and enter `omegasoft7/claude-jarvis`.
+2. Click **Add marketplace** and enter `omegasoft7/open-jarvis-talk`.
 3. Click **Add plugin**.
-
 
 ## First use: guided setup
 
-The first time you press 🎙️, Jarvis opens a setup screen. Nothing is installed until you press **Install**. The screen:
+The first time you press 🎙️, a setup screen opens. Nothing is installed until you press **Install**. The screen:
 
 1. **Checks your Mac:** macOS version, processor, memory, free space, the Xcode Command Line Tools, and Dictation.
 2. **Lists what it will install, and how big each part is:**
@@ -67,10 +68,10 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 ## Using it
 
 - **🎙️ in the footer under the message box** starts a conversation. The microphone icon is hidden while a conversation is running.
-- **Interrupt** stops Jarvis mid-sentence. **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
+- **Interrupt** stops the voice mid-sentence. **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
 - Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying **"goodbye"** or **"stop"** ends the conversation.
 - The whole conversation stays on the screen, so you can scroll back through it.
-- `/jarvis-talk` starts a conversation. `/jarvis` opens a typed side chat about the session.
+- `/open-jarvis-talk` starts a conversation. `/open-jarvis-talk-chat` opens a typed side chat about the session.
 
 ## Changing the voice
 
@@ -80,7 +81,7 @@ The default voice is `af_heart`. To use another voice, write its name to `~/.cla
 echo bm_george > ~/.claude/jarvis/voice
 ```
 
-Jarvis's next answer uses the new voice. Delete the file to go back to the default.
+The next answer uses the new voice. Delete the file to go back to the default.
 
 The voices are:
 - American: `af_heart`, `af_bella`, `af_nicole`, `af_sarah`, `af_sky`, `am_michael`, `am_adam`, `am_eric`, `am_liam`, `am_onyx` and more.
@@ -97,7 +98,7 @@ The voices are:
 
 1. Uninstall the plugin:
    ```bash
-   claude plugin uninstall jarvis
+   claude plugin uninstall open-jarvis-talk
    ```
 2. Delete the voice files:
    ```bash
@@ -106,8 +107,8 @@ The voices are:
 
 ## Troubleshooting
 
-Jarvis writes logs to `~/.claude/jarvis/`:
-- `jarvis.log` records what Jarvis did, including why it switched to the Mac voice.
+Logs are in `~/.claude/jarvis/`:
+- `jarvis.log` records what it did, including why it switched to the Mac voice.
 - `listen.log` comes from the speech listener.
 - `setup.log` and `build.log` come from setup.
 
@@ -130,4 +131,4 @@ The plugin is a Claude Code hooks module:
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The natural voice uses kokoro-onnx (MIT) and the Kokoro-82M model (Apache 2.0), downloaded from their authors at setup and not part of this repository. This project is not affiliated with Anthropic or with OpenJarvis.
+MIT, see [LICENSE](LICENSE). The natural voice uses kokoro-onnx (MIT) and the Kokoro-82M model (Apache 2.0), downloaded from their authors at setup and not part of this repository. Open Jarvis Talk is an independent project. It is not affiliated with Anthropic, or with the OpenJarvis project (open-jarvis/openjarvis), and does not use its code.

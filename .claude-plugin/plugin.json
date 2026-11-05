@@ -1,9 +1,10 @@
 {
-  "name": "jarvis",
-  "version": "1.0.1",
-  "description": "Talk to Jarvis about your Claude Code session: a voice conversation that knows the session, answers questions, researches, and drafts commands you approve before they are sent.",
+  "name": "open-jarvis-talk",
+  "version": "1.1.0",
+  "description": "Open Jarvis Talk: talk to your Claude Code session by voice. It knows the session, answers questions, researches, and drafts commands you approve before they are sent.",
   "author": { "name": "omegasoft7" },
-  "repository": "https://github.com/omegasoft7/claude-jarvis",
+  "repository": "https://github.com/omegasoft7/open-jarvis-talk",
+  "homepage": "https://github.com/omegasoft7/open-jarvis-talk",
   "license": "MIT",
   "keywords": ["voice", "assistant", "conversation", "speech", "macos"],
   "types": "./types/index.d.ts"

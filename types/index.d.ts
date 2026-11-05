@@ -29,7 +29,7 @@ export type Setup = {
 
 declare module 'claude-code' {
   interface PluginState {
-    jarvis: {
+    'open-jarvis-talk': {
       chat: Shaped<ChatEntry[]>
       draft: string | null
       busy: string | null

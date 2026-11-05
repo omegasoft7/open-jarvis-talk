@@ -1,11 +1,16 @@
 {
-  "name": "claude-jarvis",
-  "owner": { "name": "omegasoft7" },
+  "name": "open-jarvis-talk",
+  "owner": {
+    "name": "omegasoft7"
+  },
+  "metadata": {
+    "description": "Open Jarvis Talk: a voice companion for Claude Code on macOS."
+  },
   "plugins": [
     {
-      "name": "jarvis",
+      "name": "open-jarvis-talk",
       "source": "./",
-      "description": "Talk to Jarvis about your Claude Code session by voice (macOS)."
+      "description": "Open Jarvis Talk: talk to your Claude Code session by voice (macOS)."
     }
   ]
 }

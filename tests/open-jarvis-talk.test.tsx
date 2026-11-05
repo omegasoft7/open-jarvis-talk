@@ -1,11 +1,11 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 const PANE = {
-  plugin: 'jarvis',
+  plugin: 'open-jarvis-talk',
   component: 'Pane',
   requestId: 'jarvis',
   props: {
-    title: 'Jarvis',
+    title: 'Open Jarvis Talk · Chat',
     isFocused: false,
     bodyColumns: 60,
     placement: 'dock',
@@ -31,7 +31,7 @@ const DRAFTING = {
 
 test('opening asks nothing; suggestions are offered instead', async ($, on) => {
   let forks = 0
-  on('command.register', () => ({ value: { command: 'jarvis' } }))
+  on('command.register', () => ({ value: { command: 'open-jarvis-talk-chat' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('model.fork', () => {
     forks += 1
@@ -39,7 +39,7 @@ test('opening asks nothing; suggestions are offered instead', async ($, on) => {
     return DRAFTING
   })
 
-  await $.command.run({ command: 'jarvis', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk-chat', args: '' })
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
 
   expect(forks).toBe(0)
@@ -78,7 +78,7 @@ test('typed: ask, get a draft, approve it: it is submitted to the session', asyn
 })
 
 const FOOTER = {
-  plugin: 'jarvis',
+  plugin: 'open-jarvis-talk',
   surface: 'desktop',
   component: 'SessionMode',
   requestId: 'footer',
@@ -109,7 +109,7 @@ const isMacSay = (argv: readonly string[]) => (argv[2] ?? '').includes('/usr/bin
 const isSay = (argv: readonly string[]) => isKokoro(argv) || isMacSay(argv)
 const KOKORO_SPOKE = { stream: 'stdout' as const, text: 'pid: 9001\nspeaking voice=af_heart via=server after=0.30s\ndone\n' }
 
-const VOICE = { ...PANE, requestId: 'jarvis-voice', props: { ...PANE.props, title: 'Jarvis · Conversation' } } as const
+const VOICE = { ...PANE, requestId: 'jarvis-voice', props: { ...PANE.props, title: 'Open Jarvis Talk' } } as const
 
 test('conversation mode: hears, speaks the answer, "send it" approves, silence pauses', async ($, on) => {
   const said: string[] = []
@@ -174,7 +174,7 @@ test('a listener error is shown and the conversation pauses', async ($, on) => {
     return { value: { code: 3, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
 
   expect((await voice.find({ type: 'Text', text: /Conversation stopped/ }))?.text).toContain('microphone')
@@ -195,7 +195,7 @@ test('Dictation turned off: the reason is shown on the conversation screen', asy
     return { value: { code: 7, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
 
   expect((await voice.find({ type: 'Text', text: /Dictation is turned off/ }))?.text).toContain('Keyboard > Dictation')
@@ -215,7 +215,7 @@ test('listening that keeps ending at once stops instead of looping', async ($, o
     return { value: { code: 0, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
 
   expect(rounds).toBe(2)
@@ -248,7 +248,7 @@ test('End conversation kills the running listener by its pid at once', async ($,
     return { value: { code: null, signal: 'SIGTERM' } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
   await voice.press({ key: 'end' })
 
@@ -276,7 +276,7 @@ test('saying "goodbye" ends the conversation and closes it', async ($, on) => {
     return { value: { code: 0, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.settle()
 
   expect(said).toEqual(['Okay, bye.'])
@@ -311,7 +311,7 @@ test('the conversation stops when its pane is no longer shown', async ($, on) =>
     return { value: { code: null, signal: 'SIGTERM' } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.advance(2500)
   await clock.settle()
 
@@ -322,15 +322,15 @@ test('the microphone sits in the footer under the prompt, still offered after a 
   mock.clock(on)
   on('process.run', runReady)
   on('ui.open', () => ({ value: { isPlaced: true } }))
-  on('command.register', () => ({ value: { command: 'jarvis' } }))
+  on('command.register', () => ({ value: { command: 'open-jarvis-talk-chat' } }))
   on('process.spawn', async function* () {
     yield { stream: 'stdout' as const, text: 'error: the microphone is not allowed for Claude\n' }
 
     return { value: { code: 3, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis', args: '' }) // the chat pane is open
-  await $.command.run({ command: 'jarvis-talk', args: '' }) // and the talk paused
+  await $.command.run({ command: 'open-jarvis-talk-chat', args: '' }) // the chat pane is open
+  await $.command.run({ command: 'open-jarvis-talk', args: '' }) // and the talk paused
 
   for (const surface of ['desktop', 'terminal'] as const) {
     const footer = await $.ui.mount({ ...FOOTER, surface, props: { modes: ['focus', 'memory paused'] } })
@@ -349,7 +349,7 @@ test('a reload resets a stale conversation state', async ($, on) => {
   const clock = mock.clock(on)
   on('process.run', runReady)
   on('ui.open', () => ({ value: { isPlaced: true } }))
-  on('command.register', () => ({ value: { command: 'jarvis' } }))
+  on('command.register', () => ({ value: { command: 'open-jarvis-talk-chat' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('process.spawn', async function* () {
     yield { stream: 'stdout' as const, text: 'error: the microphone is not allowed for Claude\n' }
@@ -357,7 +357,7 @@ test('a reload resets a stale conversation state', async ($, on) => {
     return { value: { code: 3, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.settle()
   const before = await $.ui.mount({ ...VOICE, surface: 'desktop' })
   expect(await before.find({ type: 'Button', key: 'resume' })).toBeDefined()
@@ -397,7 +397,7 @@ test('the conversation screen keeps the whole talk history', async ($, on) => {
   })
 
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.settle()
 
   for (const text of [/What is the session doing/, /Answer number 1/, /And what is next/, /Answer number 2/]) {
@@ -446,7 +446,7 @@ test('Kokoro speaks; when it fails, macOS say takes over and the reason is logge
     return { value: { code: 0, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.settle()
 
   expect(voices).toEqual(['kokoro', 'kokoro', 'say'])
@@ -494,7 +494,7 @@ test('Interrupt stops the Kokoro voice by pid and does not fall back to say', as
   })
 
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.settle()
   await voice.press({ key: 'interrupt' })
   await clock.settle()
@@ -504,7 +504,7 @@ test('Interrupt stops the Kokoro voice by pid and does not fall back to say', as
   await voice.unmount()
 })
 
-const SETUP_VIEW = { ...VOICE, props: { ...VOICE.props, title: 'Jarvis · Setup' } } as const
+const SETUP_VIEW = { ...VOICE, props: { ...VOICE.props, title: 'Open Jarvis Talk · Setup' } } as const
 
 test('first press on a Mac not set up: checks it, lists what to install, installs on Install, then talks', async ($, on) => {
   const clock = mock.clock(on)
@@ -535,12 +535,12 @@ test('first press on a Mac not set up: checks it, lists what to install, install
   const footer = await $.ui.mount(FOOTER)
   await footer.press({ key: 'talk-jarvis' })
   await footer.unmount()
-  expect(titles).toEqual(['Jarvis · Setup'])
+  expect(titles).toEqual(['Open Jarvis Talk · Setup'])
   expect(listened).toBe(0) // nothing is installed or heard before the person says so
 
   for (const surface of ['desktop', 'terminal'] as const) {
     const view = await $.ui.mount({ ...SETUP_VIEW, surface })
-    expect(await view.find({ type: 'Text', text: /Your Mac can run Jarvis/ })).toBeDefined()
+    expect(await view.find({ type: 'Text', text: /Your Mac can run Open Jarvis Talk/ })).toBeDefined()
     expect(await view.find({ type: 'Text', text: /Python 3.12, the Kokoro voice engine/ })).toBeDefined()
     expect(await view.find({ type: 'Text', text: /astral-sh\/uv/ })).toBeDefined()
     expect((await view.find({ type: 'Button', key: 'install' }))?.props.label).toBe('Install (about 606 MB)')
@@ -552,11 +552,11 @@ test('first press on a Mac not set up: checks it, lists what to install, install
   expect(installs).toEqual([['install']])
   expect(await view.find({ type: 'Text', text: /Speech listener built/ })).toBeDefined()
   expect(await view.find({ type: 'Text', text: /Downloading uv/ })).toBeDefined()
-  expect(await view.find({ type: 'Text', text: /Jarvis is ready/ })).toBeDefined()
+  expect(await view.find({ type: 'Text', text: /Open Jarvis Talk is ready/ })).toBeDefined()
 
   await view.press({ key: 'start' })
   await clock.settle()
-  expect(titles.at(-1)).toBe('Jarvis · Conversation')
+  expect(titles.at(-1)).toBe('Open Jarvis Talk')
   expect(listened).toBe(1)
   expect(await view.find({ type: 'Text', text: /Conversation stopped: test over/ })).toBeDefined()
   await view.unmount()
@@ -573,7 +573,7 @@ test('skipping the natural voice installs with --no-voice and shrinks the size',
     return { value: { code: 0, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const view = await $.ui.mount({ ...SETUP_VIEW, surface: 'desktop' })
   await view.press({ key: 'toggle-voice' })
   expect((await view.find({ type: 'Button', key: 'install' }))?.props.label).toBe('Install (about 1 MB)')
@@ -589,7 +589,7 @@ test('a Mac too old for Jarvis says why and offers no Install', async ($, on) =>
     isSetup(e.argv) ? checked({ ...FRESH, macos: '12.7', macos_ok: 'no' }) : RAN,
   )
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const view = await $.ui.mount({ ...SETUP_VIEW, surface: 'desktop' })
   expect(await view.find({ type: 'Text', text: /needs macOS 13 or later/ })).toBeDefined()
   expect(await view.find({ type: 'Button', key: 'install' })).toBeUndefined()
@@ -613,7 +613,7 @@ test('no Command Line Tools: offers to install them and holds Install until they
     return checked({ ...FRESH, tools: hasTools ? 'yes' : 'no', dictation: 'off' })
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const view = await $.ui.mount({ ...SETUP_VIEW, surface: 'desktop' })
   expect(await view.find({ type: 'Button', key: 'install' })).toBeUndefined()
   expect(await view.find({ type: 'Button', key: 'open-dictation' })).toBeDefined()
@@ -638,7 +638,7 @@ test('an installer failure shows the reason and Try again checks again', async (
     return { value: { code: 1, signal: null } }
   })
 
-  await $.command.run({ command: 'jarvis-talk', args: '' })
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const view = await $.ui.mount({ ...SETUP_VIEW, surface: 'desktop' })
   await view.press({ key: 'install' })
   expect(await view.find({ type: 'Text', text: /Setup stopped: could not download the voice model/ })).toBeDefined()

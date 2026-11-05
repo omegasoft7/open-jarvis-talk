@@ -4,7 +4,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { ChatEntry, Setup, SetupCheck, TalkState } from '../types'
 
 const PANE = 'jarvis'
-const TITLE = 'Jarvis'
+const TITLE = 'Open Jarvis Talk · Chat'
 const MAX_RESEARCH_ROUNDS = 2
 const LANGUAGE = 'en-US'
 const LISTEN =
@@ -25,16 +25,16 @@ function jlog($: EngineInterface, line: string): void {
     .catch(() => undefined)
 }
 
-const chat = atom({ plugin: 'jarvis', key: 'chat' } as const, [] as ChatEntry[], {
+const chat = atom({ plugin: 'open-jarvis-talk', key: 'chat' } as const, [] as ChatEntry[], {
   shape: 'chat-1',
 })
-const draft = atom({ plugin: 'jarvis', key: 'draft' } as const, null as string | null)
-const busy = atom({ plugin: 'jarvis', key: 'busy' } as const, null as string | null)
-const field = atom({ plugin: 'jarvis', key: 'field' } as const, 0)
-const isOpen = atom({ plugin: 'jarvis', key: 'isOpen' } as const, false)
-const talk = atom({ plugin: 'jarvis', key: 'talk' } as const, 'off' as TalkState)
-const heard = atom({ plugin: 'jarvis', key: 'heard' } as const, '')
-const setup = atom({ plugin: 'jarvis', key: 'setup' } as const, null as Setup | null)
+const draft = atom({ plugin: 'open-jarvis-talk', key: 'draft' } as const, null as string | null)
+const busy = atom({ plugin: 'open-jarvis-talk', key: 'busy' } as const, null as string | null)
+const field = atom({ plugin: 'open-jarvis-talk', key: 'field' } as const, 0)
+const isOpen = atom({ plugin: 'open-jarvis-talk', key: 'isOpen' } as const, false)
+const talk = atom({ plugin: 'open-jarvis-talk', key: 'talk' } as const, 'off' as TalkState)
+const heard = atom({ plugin: 'open-jarvis-talk', key: 'heard' } as const, '')
+const setup = atom({ plugin: 'open-jarvis-talk', key: 'setup' } as const, null as Setup | null)
 
 const SUGGESTIONS = [
   'Brief me on this session',
@@ -197,7 +197,7 @@ const VOICE_PANE = 'jarvis-voice'
 function isActive(state: TalkState): boolean {
   return state === 'listening' || state === 'thinking' || state === 'speaking'
 }
-const VOICE_TITLE = 'Jarvis · Conversation'
+const VOICE_TITLE = 'Open Jarvis Talk'
 const MIC = '🎙️'
 const SILENT_ROUNDS_BEFORE_PAUSE = 6 // the listener waits 20 s a round
 
@@ -510,7 +510,7 @@ async function startTalking($: EngineInterface): Promise<void> {
 // check), says what will be installed and how much space it takes, and
 // installs only once the person presses Install.
 
-const SETUP_TITLE = 'Jarvis · Setup'
+const SETUP_TITLE = 'Open Jarvis Talk · Setup'
 const UV_MB = 45
 let isSetUp = false
 
@@ -563,7 +563,7 @@ function fromCheck(stdout: string, withVoice = true): Setup {
     {
       label: `macOS ${info.macos ?? '?'}`,
       isOk: info.macos_ok === 'yes',
-      detail: info.macos_ok === 'yes' ? 'supported' : 'Jarvis needs macOS 13 or later',
+      detail: info.macos_ok === 'yes' ? 'supported' : 'Open Jarvis Talk needs macOS 13 or later',
     },
     {
       label: isSilicon ? 'Apple Silicon' : `${info.arch ?? 'unknown'} processor`,
@@ -598,9 +598,9 @@ function fromCheck(stdout: string, withVoice = true): Setup {
   ]
   const blocker =
     info.macos_ok !== 'yes'
-      ? 'This Mac cannot run Jarvis: it needs macOS 13 or later.'
+      ? 'This Mac cannot run Open Jarvis Talk: it needs macOS 13 or later.'
       : freeMb < needMb + number('spare_mb')
-        ? `Not enough free space: Jarvis needs about ${megabytes(needMb)}.`
+        ? `Not enough free space: Open Jarvis Talk needs about ${megabytes(needMb)}.`
         : ''
 
   return {
@@ -710,7 +710,7 @@ function setupScreen($: EngineInterface, els: ReturnType<EngineInterface['ui']['
 
   return (
     <Box flexDirection="column" gap={1} paddingY={1}>
-      <Text bold>Set up Jarvis</Text>
+      <Text bold>Set up Open Jarvis Talk</Text>
 
       {view.phase === 'checking' && <Text dimColor>Checking your Mac…</Text>}
 
@@ -729,7 +729,7 @@ function setupScreen($: EngineInterface, els: ReturnType<EngineInterface['ui']['
         (view.blocker !== '' ? (
           <Text color="error">{view.blocker}</Text>
         ) : (
-          <Text color="success">Your Mac can run Jarvis.</Text>
+          <Text color="success">Your Mac can run Open Jarvis Talk.</Text>
         ))}
 
       {view.phase === 'review' && (view.needsTools || view.dictation === 'off') && (
@@ -821,7 +821,7 @@ function setupScreen($: EngineInterface, els: ReturnType<EngineInterface['ui']['
             </Text>
           ))}
           <Text color="success" bold>
-            Jarvis is ready.
+            Open Jarvis Talk is ready.
           </Text>
           <Text dimColor wrap="wrap">
             The first time you talk, macOS asks to allow the microphone and speech recognition. Click Allow.
@@ -935,24 +935,24 @@ export const register: Register = on => {
     await update($, heard, () => '')
     await update($, setup, () => null)
     await $.command.register({
-      name: 'jarvis',
-      description: 'Open Jarvis: a side chat about this session',
+      name: 'open-jarvis-talk-chat',
+      description: 'Open Jarvis Talk: a typed side chat about this session',
     })
     await $.command.register({
-      name: 'jarvis-talk',
-      description: 'Talk to Jarvis about this session (conversation mode)',
+      name: 'open-jarvis-talk',
+      description: 'Open Jarvis Talk: talk about this session by voice',
     })
 
     return next(e)
   })
 
-  on('command.run', { command: 'jarvis' }, async $ => {
+  on('command.run', { command: 'open-jarvis-talk-chat' }, async $ => {
     await openPane($)
 
     return { text: 'Jarvis opened.' }
   })
 
-  on('command.run', { command: 'jarvis-talk' }, async $ => {
+  on('command.run', { command: 'open-jarvis-talk' }, async $ => {
     await openConversation($)
 
     return { text: 'Conversation with Jarvis started.' }
