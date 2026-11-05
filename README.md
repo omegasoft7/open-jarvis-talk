@@ -1,6 +1,6 @@
 # Jarvis for Claude Code
 
-Talk to your Claude Code session out loud. Press the 🎙️ above the prompt and a conversation screen opens. Ask Jarvis what the session is doing, why, or what to do next, and it answers in a natural voice. When you say something like "let's add tests", Jarvis drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
+Talk to your Claude Code session out loud. Press the 🎙️ under the message box and a conversation screen opens. Ask Jarvis what the session is doing, why, or what to do next, and it answers in a natural voice. When you say something like "let's add tests", Jarvis drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
 
 - **Knows the session.** Jarvis reads the conversation you're in, so it can answer questions about it.
 - **Hands-free.** It listens, answers, and listens again. A pause doesn't cut you off. Say "goodbye", or press **End conversation**, to stop.
@@ -67,7 +67,7 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 
 ## Using it
 
-- **🎙️ above the prompt** starts a conversation. The microphone icon is hidden while a conversation is running.
+- **🎙️ in the footer under the message box** starts a conversation. The microphone icon is hidden while a conversation is running.
 - **Interrupt** stops Jarvis mid-sentence. **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
 - Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying **"goodbye"** or **"stop"** ends the conversation.
 - The whole conversation stays on the screen, so you can scroll back through it.

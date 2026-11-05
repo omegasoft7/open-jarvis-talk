@@ -77,6 +77,14 @@ test('typed: ask, get a draft, approve it: it is submitted to the session', asyn
   }
 })
 
+const FOOTER = {
+  plugin: 'jarvis',
+  surface: 'desktop',
+  component: 'SessionMode',
+  requestId: 'footer',
+  props: { modes: [] as string[] },
+} as const
+
 const isSetup = (argv: readonly string[]) => (argv[1] ?? '').endsWith('setup/jarvis-setup.sh')
 const CHECK = {
   macos: '27.2', macos_ok: 'yes', arch: 'arm64', ram_gb: '32', free_mb: '100000', spare_mb: '500',
@@ -310,7 +318,7 @@ test('the conversation stops when its pane is no longer shown', async ($, on) =>
   expect(killed).toEqual(['777'])
 })
 
-test('after a conversation pauses, the microphone and Talk are still offered; no Jarvis text button', async ($, on) => {
+test('the microphone sits in the footer under the prompt, still offered after a pause', async ($, on) => {
   mock.clock(on)
   on('process.run', runReady)
   on('ui.open', () => ({ value: { isPlaced: true } }))
@@ -324,16 +332,13 @@ test('after a conversation pauses, the microphone and Talk are still offered; no
   await $.command.run({ command: 'jarvis', args: '' }) // the chat pane is open
   await $.command.run({ command: 'jarvis-talk', args: '' }) // and the talk paused
 
-  const band = await $.ui.mount({
-    plugin: 'jarvis',
-    surface: 'desktop',
-    component: 'AbovePrompt',
-    requestId: 'band',
-    props: { hasSurvey: false, isWorking: false, maxRows: 4, bodyColumns: 80 },
-  })
-  expect((await band.find({ type: 'Button', key: 'talk-jarvis' }))?.props.label).toBe('🎙️')
-  expect(await band.find({ type: 'Button', key: 'open-jarvis' })).toBeUndefined()
-  await band.unmount()
+  for (const surface of ['desktop', 'terminal'] as const) {
+    const footer = await $.ui.mount({ ...FOOTER, surface, props: { modes: ['focus', 'memory paused'] } })
+    expect((await footer.find({ type: 'Button', key: 'talk-jarvis' }))?.props.label).toBe('🎙️')
+    expect(await footer.find({ type: 'Text', text: 'focus & memory paused' })).toBeDefined() // modes kept
+    expect(await footer.find({ type: 'Button', key: 'open-jarvis' })).toBeUndefined()
+    await footer.unmount()
+  }
 
   const chatPane = await $.ui.mount({ ...PANE, surface: 'desktop' })
   expect(await chatPane.find({ type: 'Button', key: 'talk' })).toBeDefined()
@@ -499,13 +504,6 @@ test('Interrupt stops the Kokoro voice by pid and does not fall back to say', as
   await voice.unmount()
 })
 
-const BAND = {
-  plugin: 'jarvis',
-  surface: 'desktop',
-  component: 'AbovePrompt',
-  requestId: 'band',
-  props: { hasSurvey: false, isWorking: false, maxRows: 4, bodyColumns: 80 },
-} as const
 const SETUP_VIEW = { ...VOICE, props: { ...VOICE.props, title: 'Jarvis · Setup' } } as const
 
 test('first press on a Mac not set up: checks it, lists what to install, installs on Install, then talks', async ($, on) => {
@@ -534,9 +532,9 @@ test('first press on a Mac not set up: checks it, lists what to install, install
     return { value: { code: 0, signal: null } }
   })
 
-  const band = await $.ui.mount(BAND)
-  await band.press({ key: 'talk-jarvis' })
-  await band.unmount()
+  const footer = await $.ui.mount(FOOTER)
+  await footer.press({ key: 'talk-jarvis' })
+  await footer.unmount()
   expect(titles).toEqual(['Jarvis · Setup'])
   expect(listened).toBe(0) // nothing is installed or heard before the person says so
 

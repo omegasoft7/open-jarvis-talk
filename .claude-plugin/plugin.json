@@ -1,6 +1,6 @@
 {
   "name": "jarvis",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Talk to Jarvis about your Claude Code session: a voice conversation that knows the session, answers questions, researches, and drafts commands you approve before they are sent.",
   "author": { "name": "omegasoft7" },
   "repository": "https://github.com/omegasoft7/claude-jarvis",

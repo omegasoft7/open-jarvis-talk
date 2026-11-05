@@ -973,14 +973,17 @@ export const register: Register = on => {
     return closed
   }).catch(($, e, next) => next(e))
 
-  // One microphone icon above the prompt: the way into a conversation. (Mods
-  // cannot add icons to the app's own toolbar; this band is the nearest place.)
-  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey || isActive(await read($, talk))) return next(e)
-    const { Box, Button } = $.ui.resolve(e)
+  // One microphone icon in the footer under the prompt, beside the mode labels
+  // the footer already shows (kept as they were): the way into a conversation.
+  // (Mods cannot add icons to the app's own toolbar; this is the nearest place.)
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    if (isActive(await read($, talk))) return next(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
+    const modes = e.props.modes.join(' & ')
 
     return (
-      <Box>
+      <Box gap={1} alignItems="center">
+        {modes !== '' && <Text dimColor>{modes}</Text>}
         <Button key="talk-jarvis" label={MIC} plain onPress={() => openConversation($)} />
       </Box>
     )
