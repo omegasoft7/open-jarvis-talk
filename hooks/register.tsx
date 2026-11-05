@@ -67,11 +67,11 @@ function buildPrompt(
         ? `Jarvis: ${entry.text}`
         : `(${entry.text})`,
   )
-  const research = findings.length
+  const researchText = findings.length
     ? `\n\nResearch findings for this question:\n${findings.join('\n\n')}`
     : ''
 
-  return `${RULES}${isVoice ? VOICE_RULES : ''}\n\nJarvis conversation so far:\n${lines.join('\n')}${research}\n\nReply as Jarvis to the user's last message.`
+  return `${RULES}${isVoice ? VOICE_RULES : ''}\n\nJarvis conversation so far:\n${lines.join('\n')}${researchText}\n\nReply as Jarvis to the user's last message.`
 }
 
 function note(text: string): ChatEntry {
@@ -89,7 +89,7 @@ function speakable(text: string): string {
 }
 
 async function research($: EngineInterface, question: string): Promise<string> {
-  const ask = `Research this on the web and answer concisely (at most 250 words), listing source URLs at the end:\n\n${question}`
+  const request = `Research this on the web and answer concisely (at most 250 words), listing source URLs at the end:\n\n${question}`
   try {
     const run = await $.process.run(
       [
@@ -97,7 +97,7 @@ async function research($: EngineInterface, question: string): Promise<string> {
         '-lc',
         'claude -p --allowedTools WebSearch,WebFetch --disallowedTools Bash,Edit,Write,NotebookEdit --output-format text',
       ],
-      { stdin: ask, timeoutMs: 300_000, env: { CLAUDECODE: '' } },
+      { stdin: request, timeoutMs: 300000, env: { CLAUDECODE: '' } },
     )
     jlog($, `research exit=${run.exitCode} out=${run.stdout.length}ch err=${run.stderr.slice(0, 300)}`)
     if (run.exitCode !== 0) {
@@ -626,7 +626,7 @@ function fromCheck(stdout: string, withVoice = true): Setup {
  * show, or null when the check could not run (the screen says why). */
 async function checkMac($: EngineInterface, withVoice = true): Promise<Setup | null> {
   try {
-    const run = await $.process.run(['/bin/bash', setupScript($), 'check'], { timeoutMs: 30_000 })
+    const run = await $.process.run(['/bin/bash', setupScript($), 'check'], { timeoutMs: 30000 })
     if (run.exitCode !== 0) throw new Error(run.stderr.trim() || `exit ${run.exitCode}`)
     const found = fromCheck(run.stdout, withVoice)
     isSetUp = /^ready=yes$/m.test(run.stdout)
