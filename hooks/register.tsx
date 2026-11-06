@@ -33,6 +33,8 @@ const isOpen = atom({ plugin: 'open-jarvis-talk', key: 'isOpen' } as const, fals
 const talk = atom({ plugin: 'open-jarvis-talk', key: 'talk' } as const, 'off' as TalkState)
 const heard = atom({ plugin: 'open-jarvis-talk', key: 'heard' } as const, '')
 const setup = atom({ plugin: 'open-jarvis-talk', key: 'setup' } as const, null as Setup | null)
+/** Whether a tap under the orb acts now (see TAP_ARM_MS). */
+const tapArmed = atom({ plugin: 'open-jarvis-talk', key: 'tapArmed' } as const, false)
 
 // ---- Settings --------------------------------------------------------------
 // Chosen on the settings screen (the ⚙ at the top of the conversation), kept
@@ -159,6 +161,11 @@ const STYLE_VOICE: Record<ReplyStyle, string> = {
   simple: 'one to three short spoken sentences in simple everyday words',
 }
 
+/** How a <command> carries the user's request: relayed, not planned. The
+ * session's agent decides how to do what was asked. */
+const COMMAND_RULES = `- The command relays the user's request; it is not your plan. Keep their intent, scope and level of detail, and tidy only the wording so it reads as a clear request. Keep any steps, files or approach the user named, and never add steps, files to touch, an approach or tasks the user did not mention: the session's agent knows its own work and decides what the request means and how to do it. "Ask it to finalize everything" becomes "Please finalize everything.", not a list of what finalizing involves.
+- Add to the request only what the agent needs to understand it, since it cannot see this talk with Jarvis: say what "it", "that" or "the bug" refers to, naming the file when that is what the user meant, or include a detail the user gave earlier in this talk. Keep any such addition short and phrased as context, never as extra instructions.`
+
 function rules(chosen: JarvisSettings): string {
   return `[Jarvis side channel. This is NOT a turn of this session.]
 The user opened "Jarvis", a side assistant next to this session. For this reply only, you are Jarvis:
@@ -169,14 +176,19 @@ ${
   chosen.research
     ? '- If you truly need facts from the web to answer, reply with ONLY <research>one precise question</research> and nothing else. You will get the findings back.\n'
     : '- Web research is turned off: answer from what you know and say so when you are unsure.\n'
-}- When the user wants the session to do something ("let's do X", "tell it to..."), write the message the session's agent should receive inside ONE <command>...</command> block, as clear instructions to that agent, plus one line saying what it will do. The user approves it before it is sent.
+}- When the user wants the session to do something ("let's do X", "tell it to..."), put the message for the session's agent inside ONE <command>...</command> block, plus one line saying what it will do. The user approves it before it is sent.
+${COMMAND_RULES}
 - Never claim you did something in the session yourself.`
 }
 
 function voiceRules(chosen: JarvisSettings): string {
   return `
-The user is TALKING to you by voice and your reply is read aloud: answer in ${STYLE_VOICE[chosen.replyStyle]}, plain text only (no markdown, lists, code or URLs). The <command> rule still applies; when you draft a command, say in one sentence what it will do.`
+The user is TALKING to you by voice and your reply is read aloud: answer in ${STYLE_VOICE[chosen.replyStyle]}, plain text only (no markdown, lists, code or URLs). The <command> rule still applies; when you draft a command, say in one sentence what it will do.
+- When the user is ending this talk with you (saying goodbye, "that's it, you can go", "thanks, we're done"), reply with a short goodbye and put ${END_MARK} at the very end; the conversation then closes. Only do this when they clearly mean to stop talking to you, not when they ask the session to finish something.`
 }
+
+/** Jarvis puts this at the end of a reply that ends the voice conversation. */
+const END_MARK = '<end/>'
 
 function ownInstructions(chosen: JarvisSettings): string {
   const text = chosen.instructions.trim()
@@ -243,8 +255,11 @@ async function research($: EngineInterface, question: string): Promise<string> {
   }
 }
 
-/** Asks Jarvis; resolves the reply's text (null when there was none). */
-async function askJarvis($: EngineInterface, question: string, isVoice: boolean): Promise<string | null> {
+/** A reply to speak, and whether it ends the voice conversation. */
+type Answer = { text: string; isEnd: boolean }
+
+/** Asks Jarvis; resolves the reply (null when there was none). */
+async function askJarvis($: EngineInterface, question: string, isVoice: boolean): Promise<Answer | null> {
   if ((await read($, busy)) !== null) return null
 
   await update($, chat, list => [...list, { role: 'you' as const, text: question, isVoice }])
@@ -277,7 +292,7 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
               : `No answer (${reply.reason}).`
         await update($, chat, list => [...list, note(why)])
 
-        return why
+        return { text: why, isEnd: false }
       }
 
       const text = reply.text.trim()
@@ -295,21 +310,23 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
       }
 
       const command = /<command>([\s\S]*?)<\/command>/.exec(text)
+      const isEnd = isVoice && /<end\s*\/?>/i.test(text)
       const shown =
         text
           .replace(/<command>[\s\S]*?<\/command>/g, '')
           .replace(/<\/?research>/g, '')
-          .trim() || 'Here is a draft command for the session.'
+          .replace(/<\/?end\s*\/?>/gi, '')
+          .trim() || (command ? 'Here is a draft command for the session.' : 'Okay, bye.')
       await update($, chat, list => [...list, { role: 'jarvis' as const, text: shown }])
       toNewest($)
       if (command) {
         const body = (command[1] ?? '').trim()
         await update($, draft, () => body)
 
-        return `${shown} Say "send it" to send it to the session, or "discard".`
+        return { text: `${shown} Say "send it" to send it to the session, or "discard".`, isEnd: false }
       }
 
-      return shown
+      return { text: shown, isEnd }
     }
 
     return null
@@ -377,6 +394,35 @@ function takePid(child: Child, line: string): boolean {
   return true
 }
 
+// A tap under the orb works only once the state it shows has held for
+// TAP_ARM_MS, so a tap aimed at "send now" that lands just as Jarvis starts
+// thinking does not stop it. A tap disarms it until the next state has held
+// that long, so quick double taps, even two at the same moment, count once.
+const TAP_ARM_MS = 800
+let armTimer: { cancel: () => void } | null = null
+/** tapArmed as tapOrb checks it: written at once, before the atom catches up. */
+let isTapArmed = false
+
+/** Arms or disarms the tap under the orb. */
+async function setTapArmed($: EngineInterface, isArmed: boolean): Promise<void> {
+  isTapArmed = isArmed
+  await update($, tapArmed, () => isArmed)
+}
+
+/** Sets the conversation state; the tap under the orb waits to arm again. */
+async function setTalk($: EngineInterface, state: TalkState): Promise<void> {
+  armTimer?.cancel()
+  armTimer = null
+  await setTapArmed($, false)
+  await update($, talk, () => state)
+  if (isActive(state)) {
+    armTimer = $.clock.after(TAP_ARM_MS, () => {
+      armTimer = null
+      void setTapArmed($, true).catch(() => undefined)
+    })
+  }
+}
+
 async function stopTalking($: EngineInterface, to: TalkState = 'off', why = ''): Promise<void> {
   jlog($, `conversation ${to === 'off' ? 'ended' : 'paused'}${why ? ` (${why})` : ''}`)
   talkToken += 1
@@ -384,7 +430,7 @@ async function stopTalking($: EngineInterface, to: TalkState = 'off', why = ''):
   watchdog = null
   kill($, 'listener')
   kill($, 'speaker')
-  await update($, talk, () => to)
+  await setTalk($, to)
   await update($, heard, () => '')
 }
 
@@ -465,6 +511,14 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
  * so far at once instead of waiting for the pause; while thinking or speaking,
  * stops Jarvis and listens again. */
 async function tapOrb($: EngineInterface): Promise<void> {
+  if (!isTapArmed) {
+    jlog($, 'tap ignored: the state just changed or was tapped already')
+
+    return
+  }
+  // One tap per state, taken before any await so a press at the same moment
+  // finds it gone; the next state arms it again after TAP_ARM_MS.
+  await setTapArmed($, false)
   const state = await read($, talk)
   if (state === 'listening') {
     const running = listener
@@ -573,7 +627,32 @@ async function speak($: EngineInterface, text: string, mine: number): Promise<vo
 }
 
 const SEND = /^(yes|yeah|yep|ok|okay)?[\s,.!]*(send( it)?|approve( it)?|go ahead|do it)[\s.!]*$/i
-const END = /^(ok(ay)?[\s,]*)?(stop( listening)?|end( the)? conversation|that's all|goodbye|bye( jarvis)?|thanks?,? (that's all|bye))[\s.!]*$/i
+// A goodbye said outright: a farewell ("goodbye", "you can go", "stop") with
+// only thanks and filler around it ("okay, thank you, that's it, you can go").
+// "That's it" or "we're done" alone can also confirm a draft, so they count
+// only beside a farewell. A question, a letter outside plain English, or
+// anything more ("bye, now add tests") goes to Jarvis, which ends the talk
+// itself with <end/> when that is what the person meant.
+const FAREWELL =
+  /\b(good ?bye|bye( bye)?|see you( later| soon)?|good ?night|talk (to you )?(later|soon)|you can go( now)?|you can leave( now)?|you can stop( now)?|end( the)? conversation|stop listening|stop)\b/g
+const DONE = /\b(that's (it|all)|that is (it|all)|that'll be all|that will be all|we're done|we are done|i'm done|i am done)\b/g
+const FILLER = new Set(
+  'ok okay alright all right thanks thank you so much very lot a really jarvis great perfect cool nice good awesome fine then for now yes yeah well and oh again buddy man'.split(' '),
+)
+const PLAIN = /^[A-Za-z'’` ,.!-]+$/
+
+function isGoodbye(said: string): boolean {
+  if (!PLAIN.test(said)) return false
+  const text = said.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z' ]+/g, ' ')
+  if (!new RegExp(FAREWELL.source).test(text)) return false
+  const rest = text
+    .replace(FAREWELL, ' ')
+    .replace(DONE, ' ')
+    .split(/\s+/)
+    .filter(word => word !== '' && !FILLER.has(word))
+
+  return rest.length === 0
+}
 const DISCARD = /^(no|nope)?[\s,.!]*(discard( it)?|cancel( it)?|drop it|never ?mind|don't send( it)?)[\s.!]*$/i
 
 async function you($: EngineInterface, text: string): Promise<void> {
@@ -596,7 +675,7 @@ async function talkLoop($: EngineInterface): Promise<void> {
 
   while (talkToken === mine) {
     await update($, heard, () => '')
-    await update($, talk, () => 'listening')
+    await setTalk($, 'listening')
     const startedAt = await $.clock.now()
     const said = await listenOnce($, mine)
     const tookMs = (await $.clock.now()) - startedAt
@@ -633,12 +712,9 @@ async function talkLoop($: EngineInterface): Promise<void> {
     }
     silentRounds = 0
 
-    if (END.test(said)) {
+    if (isGoodbye(said)) {
       await you($, said)
-      await update($, talk, () => 'speaking')
-      await speak($, 'Okay, bye.', mine)
-      await stopTalking($, 'off', 'said goodbye')
-      await $.ui.close({ id: VOICE_PANE }).catch(() => undefined)
+      await sayGoodbye($, 'Okay, bye.', mine, 'said goodbye')
 
       return
     }
@@ -647,26 +723,39 @@ async function talkLoop($: EngineInterface): Promise<void> {
     if (pending !== null && SEND.test(said)) {
       await you($, said)
       await sendDraft($, pending)
-      await update($, talk, () => 'speaking')
+      await setTalk($, 'speaking')
       await speak($, 'Sent.', mine)
       continue
     }
     if (pending !== null && DISCARD.test(said)) {
       await you($, said)
       await update($, draft, () => null)
-      await update($, talk, () => 'speaking')
+      await setTalk($, 'speaking')
       await speak($, 'Discarded.', mine)
       continue
     }
 
-    await update($, talk, () => 'thinking')
+    await setTalk($, 'thinking')
     const reply = await askJarvis($, said, true)
     if (talkToken !== mine) return
+    if (reply?.isEnd) {
+      await sayGoodbye($, reply.text, mine, 'Jarvis heard a goodbye')
+
+      return
+    }
     if (reply) {
-      await update($, talk, () => 'speaking')
-      await speak($, reply, mine)
+      await setTalk($, 'speaking')
+      await speak($, reply.text, mine)
     }
   }
+}
+
+/** Speaks the goodbye, then ends the conversation and closes its pane. */
+async function sayGoodbye($: EngineInterface, words: string, mine: number, why: string): Promise<void> {
+  await setTalk($, 'speaking')
+  await speak($, words, mine)
+  await stopTalking($, 'off', why)
+  await $.ui.close({ id: VOICE_PANE }).catch(() => undefined)
 }
 
 async function showVoicePane($: EngineInterface, title: string): Promise<void> {
@@ -1292,7 +1381,8 @@ function settingsScreen(
 }
 
 /** What pressing the state under the orb does now, or null when nothing. */
-function tapHint(state: TalkState, hearing: string): string | null {
+function tapHint(state: TalkState, hearing: string, isArmed: boolean): string | null {
+  if (!isArmed) return null
   if (state === 'listening') return hearing.trim() === '' ? null : 'tap to send now'
   if (state === 'thinking') return 'tap to stop'
   if (state === 'speaking') return 'tap to interrupt'
@@ -1310,7 +1400,7 @@ async function openPane($: EngineInterface): Promise<void> {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     // The listener and voice died with the previous load: start clean.
-    await update($, talk, () => 'off')
+    await setTalk($, 'off')
     await update($, heard, () => '')
     await update($, setup, () => null)
     await update($, settingsDraft, () => null)
@@ -1380,6 +1470,7 @@ export const register: Register = on => {
     if (edited !== null) return settingsScreen($, els, edited)
     const state = await read($, talk)
     const hearing = await read($, heard)
+    const hint = tapHint(state, hearing, await read($, tapArmed))
     const pending = await read($, draft)
     const list = await read($, chat)
 
@@ -1415,7 +1506,7 @@ export const register: Register = on => {
             </Text>
           )}
 
-          {tapHint(state, hearing) === null ? (
+          {hint === null ? (
             <Text bold color={state === 'paused' ? undefined : 'claude'}>
               {STATE_WORDS[state]}
             </Text>
@@ -1424,7 +1515,7 @@ export const register: Register = on => {
               <Text bold color="claude">
                 {STATE_WORDS[state]}
               </Text>{' '}
-              <Text dimColor>· {tapHint(state, hearing)}</Text>
+              <Text dimColor>· {hint}</Text>
             </Button>
           )}
 

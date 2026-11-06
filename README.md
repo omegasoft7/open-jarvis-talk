@@ -147,8 +147,10 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 - **Tap the words under the orb** ("Listening…", "Thinking…", "Speaking…"):
   - While you talk, a tap sends what you said right away, without waiting for the pause.
   - While Jarvis thinks or speaks, a tap stops it, and it listens to you again.
+  - The tap target appears a moment after each change (under a second), and quick double taps count once, so a tap meant for "send now" never stops Jarvis just as it starts thinking.
 - **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
-- Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying **"goodbye"** or **"stop"** ends the conversation.
+- Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying goodbye ends the conversation: "goodbye", "stop", or "okay, thank you, that's it, you can go". Jarvis also recognises a goodbye said in other words and closes the conversation itself.
+- Drafted commands carry your request as you said it, tidied up. Jarvis adds context only when the session would not understand the request without it, and leaves the how to the session: "ask it to finalize everything" is sent as "Please finalize everything.", not as a list of steps.
 - The whole conversation stays on the screen, so you can scroll back through it.
 - `/open-jarvis-talk` starts a conversation. `/open-jarvis-talk-chat` opens a typed side chat about the session.
 
@@ -231,6 +233,7 @@ This is the full list, for users and reviewers.
 - **Contains a download-and-run command** (`setup/jarvis-setup.sh`). Setup runs only when you press **Install**. It downloads the voice model with `curl`. Those are data files checked against fixed SHA-256 checksums, and they are never run. It installs uv with pip from PyPI with pinned hashes, and Python packages pinned to exact versions. No downloaded script is run.
 - **Hooks an event that is also a call name** (`command.run`). It answers only its own two commands (above).
 - **Images and binary files.** The plugin ships only text files and its listing icon. The README's pictures and the intro video are on this repository's [`media`](https://github.com/omegasoft7/open-jarvis-talk/tree/media) branch, not in the plugin.
+- **`CLAUDE.md` at the plugin root is not loaded as project context.** `CLAUDE.md`, `.claude/` and `.agent-feedback/` are contributor tooling for working on this repository. They ship only because the plugin installs from the repository root, and the plugin never loads or runs them.
 - **Unrecognized fields in `plugin.json`.** `documentationUrl`, `supportUrl` and `privacyPolicyUrl` are the directory's own listing fields.
 
 </details>
