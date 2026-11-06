@@ -7,7 +7,7 @@
 - [README](README.md): what it does, requirements, install, settings, privacy
 - [Intro video transcript](docs/video/transcript.md): the 48-second intro, line by line with timestamps and a scene-by-scene description
 - [Intro video captions](docs/video/open-jarvis-talk-intro.vtt): WebVTT captions for the intro video
-- [Intro video](docs/video/open-jarvis-talk-intro.mp4): 48 s, 1080p
+- [Intro video](https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@media/docs/video/open-jarvis-talk-intro.mp4): 48 s, 1080p
 
 ## Install
 

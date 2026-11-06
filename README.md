@@ -5,7 +5,7 @@
 https://github.com/user-attachments/assets/393fe769-4b24-481a-a66c-69ec1c4c324e
 
 <p align="center">
-  The 48-second intro, with sound. &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a> &nbsp;·&nbsp; <a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@main/docs/video/open-jarvis-talk-intro.mp4">Open it in a new tab</a>
+  The 48-second intro, with sound. &nbsp;·&nbsp; <a href="docs/video/transcript.md">Read the transcript</a> &nbsp;·&nbsp; <a href="https://cdn.jsdelivr.net/gh/omegasoft7/open-jarvis-talk@media/docs/video/open-jarvis-talk-intro.mp4">Open it in a new tab</a>
 </p>
 
 Talk to your Claude Code session out loud. Press the 🎙️ at the start of the footer under the message box and a conversation panel opens. Ask what the session is doing, why, or what to do next, and Open Jarvis Talk answers in a natural voice. When you say something like "let's add tests", it drafts a message for the session. Nothing reaches the session until you approve it, by saying "send it" or pressing **Send to session**.
@@ -24,20 +24,20 @@ Talk to your Claude Code session out loud. Press the 🎙️ at the start of the
 
 <table>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/01-who-has-time-to-read.jpg" alt="A wall of Claude text and the question: but who has time to read all this?"><br><sub>Claude's replies can get long.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/02-ask-out-loud.jpg" alt="The Jarvis panel beside the chat, speaking its answer"><br><sub>Ask Jarvis about the session, out loud.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/01-who-has-time-to-read.jpg" alt="A wall of Claude text and the question: but who has time to read all this?"><br><sub>Claude's replies can get long.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/02-ask-out-loud.jpg" alt="The Jarvis panel beside the chat, speaking its answer"><br><sub>Ask Jarvis about the session, out loud.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/03-you-approve.jpg" alt="A draft command for the session with Send to session and Discard"><br><sub>Jarvis drafts the request; nothing is sent until you approve.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/04-beside-your-session.jpg" alt="The chat and the Jarvis panel side by side"><br><sub>It talks beside your session, so it doesn't use up its memory.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/03-you-approve.jpg" alt="A draft command for the session with Send to session and Discard"><br><sub>Jarvis drafts the request; nothing is sent until you approve.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/04-beside-your-session.jpg" alt="The chat and the Jarvis panel side by side"><br><sub>It talks beside your session, so it doesn't use up its memory.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/05-on-your-mac.jpg" alt="The orb with: listens and speaks on your Mac, thinks with your own Claude plan, no API key"><br><sub>Listens and speaks on your Mac, thinks with your own Claude plan.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/06-knows-the-session.jpg" alt="The web research setting: Jarvis may search the web"><br><sub>Knows the whole session, and can look things up on the web.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/05-on-your-mac.jpg" alt="The orb with: listens and speaks on your Mac, thinks with your own Claude plan, no API key"><br><sub>Listens and speaks on your Mac, thinks with your own Claude plan.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/06-knows-the-session.jpg" alt="The web research setting: Jarvis may search the web"><br><sub>Knows the whole session, and can look things up on the web.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/07-make-it-yours.jpg" alt="Settings with instructions and the voice picker"><br><sub>Your own instructions, and the voice you like.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/08-stop-reading-start-talking.jpg" alt="Open Jarvis Talk. Stop reading. Start talking."><br><sub>Stop reading. Start talking.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/07-make-it-yours.jpg" alt="Settings with instructions and the voice picker"><br><sub>Your own instructions, and the voice you like.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/images/08-stop-reading-start-talking.jpg" alt="Open Jarvis Talk. Stop reading. Start talking."><br><sub>Stop reading. Start talking.</sub></td>
 </tr>
 </table>
 
@@ -48,27 +48,27 @@ These annotated pictures are illustrations of the Claude desktop app. The plugin
 
 **1. Press 🎙️ to start.** It sits at the start of the footer under the message box.
 
-![The 🎙️ at the start of the footer under the message box](docs/screenshots/01-where-the-icon-is.png)
+![The 🎙️ at the start of the footer under the message box](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/01-where-the-icon-is.png)
 
 **2. The first press sets it up.** It checks your Mac, shows what it will install and how big it is, and installs nothing until you press **Install**.
 
-![The setup screen: checks of the Mac, what will be installed and its size, and the Install button](docs/screenshots/02-first-run-setup.png)
+![The setup screen: checks of the Mac, what will be installed and its size, and the Install button](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/02-first-run-setup.png)
 
 **3. Talk about the session.** Tap the words under the orb to send what you said at once, or to interrupt Jarvis.
 
-![The conversation panel while Jarvis speaks, with the orb and Speaking… tap to interrupt](docs/screenshots/03-talking.png)
+![The conversation panel while Jarvis speaks, with the orb and Speaking… tap to interrupt](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/03-talking.png)
 
 **4. Approve what it sends.** Jarvis drafts the message; nothing reaches the session until you approve it.
 
-![A drafted command with Send to session and Discard buttons](docs/screenshots/04-approve-a-command.png)
+![A drafted command with Send to session and Discard buttons](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/04-approve-a-command.png)
 
 **5. Or type.** `/open-jarvis-talk-chat` opens a typed side chat about the session.
 
-![The typed chat panel with an answer, a draft and the ask field](docs/screenshots/05-typed-chat.png)
+![The typed chat panel with an answer, a draft and the ask field](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/05-typed-chat.png)
 
 **6. Settings.** Your own instructions, reply style, voice and speed with a test button, listening language and more.
 
-![The settings screen with instructions, voice, speed, Test voice and Save](docs/screenshots/06-settings.png)
+![The settings screen with instructions, voice, speed, Test voice and Save](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/06-settings.png)
 
 </details>
 
@@ -211,6 +211,29 @@ This is the full list, for users and reviewers.
 - `ui.close` reacts only when one of its own two panes closes: it stops listening and speaking.
 - `ui.render` draws the 🎙️ in the footer under the message box and the plugin's own panes. The mode labels that footer already shows are kept as they were.
 - `session.start` resets the conversation state and registers the two commands.
+
+**What it submits to the session**
+
+- `$.prompt.submit` (in `sendDraft`) sends only a drafted command, and only when you press **Send to session** or say "send it". The text submitted is exactly the draft shown on screen. Nothing is added to it.
+- `$.prompt.fill` puts the same draft text into your message box when you press **Edit in prompt box**. You decide whether to send it.
+
+**What it stores**
+
+- Your settings, in the plugin's own store (`$.store`): your instructions, reply style, voice engine (natural or Mac), voice, speed, language, pause length, and whether web research and spoken replies are on. They are read back when a session starts. The voice, speed, language and pause are passed to the listener and voice programs as arguments. Your instructions go only into the question Jarvis asks Claude.
+
+<details>
+<summary><b>For directory reviewers: each finding, answered</b></summary>
+
+- **Mod starts other programs, or a shell, or a program the directory couldn't fully check.** Every program is in the table above. The shells run fixed scripts, written as constants in [`hooks/register.tsx`](hooks/register.tsx). Only values from the settings (voice, speed, language, pause) and the words to speak are passed to them, as separate arguments (`$1`, `$2`, `$3`), never as code. The listener and voices run through `zsh -c` so each prints its process id first. That lets **Interrupt**, **Pause** and **End conversation** stop the sound at once with `/bin/kill`. Without the process id, a stop would wait until the program next writes output, and macOS `say` writes none. Web research runs `claude -p` through a login shell because the Claude desktop app's own `PATH` often doesn't include the `claude` command.
+- **Mod can read local data and also send data out.** The local data it reads is its own settings (above). They leave the Mac only as part of the question Jarvis asks Claude. The programs it runs send nothing anywhere, except `claude -p` for web research, which sends the research question to Claude.
+- **Mod can read the conversation and submit a prompt.** It submits only a draft you approved, word for word (above).
+- **Uses a credential from the user's machine.** The plugin reads no password, token, key or credential file. It sets no API key. Web research runs your own `claude` command, which signs in with your own Claude login, exactly as when you run it yourself. The one environment setting it passes, `CLAUDECODE` set to empty, only tells `claude -p` that it runs as a separate command, not inside this session.
+- **Contains a download-and-run command** (`setup/jarvis-setup.sh`). Setup runs only when you press **Install**. It downloads the voice model with `curl`. Those are data files checked against fixed SHA-256 checksums, and they are never run. It installs uv with pip from PyPI with pinned hashes, and Python packages pinned to exact versions. No downloaded script is run.
+- **Hooks an event that is also a call name** (`command.run`). It answers only its own two commands (above).
+- **Images and binary files.** The plugin ships only text files and its listing icon. The README's pictures and the intro video are on this repository's [`media`](https://github.com/omegasoft7/open-jarvis-talk/tree/media) branch, not in the plugin.
+- **Unrecognized fields in `plugin.json`.** `documentationUrl`, `supportUrl` and `privacyPolicyUrl` are the directory's own listing fields.
+
+</details>
 
 ## Remove
 
