@@ -35,7 +35,7 @@ Fix a failing check; never weaken or skip it.
 
 ## Plugin rules learned the hard way
 
-- An `Svg` is a leaf and cannot sit inside a `Button` (a Button holds only strings and `Text`). To make a drawing pressable, lay a `plain` Button over it in a `position="absolute"` Box (the orb's `tap-orb-area`). Make it draw nothing: no `label` (the desktop shows it as text) and short blank children on one line (the desktop joins lines and cuts a long one with "…"). For height, stack several such Buttons.
+- The orb cannot be made clickable; the words under it are the tap target. An `Svg` is a leaf and cannot sit inside a `Button`. A Button laid over it (1.3.5 to 1.3.7) always shows something on desktop: its `label` as text, a long blank line cut with "…", and a hover box the plugin cannot turn off. The maintainer wants nothing visible over the orb.
 - Write conversation state through `setTalk` (it re-arms the tap under the orb); never `update($, talk, …)` directly.
 - Timers that write state after a test ends must `.catch(() => undefined)`, or the test file fails on an unhandled rejection.
 - What Jarvis sends to the session is the user's request relayed, not Jarvis's plan (`COMMAND_RULES` in `hooks/register.tsx`).
