@@ -1,5 +1,5 @@
 ---
-description: Run one open-jarvis-talk sprint cycle over GitHub Issues. Refine the open issues into a ranked sprint, stop for the founder's approval, then implement every approved issue in parallel worktree developers, review each PR with code-reviewer, fix rejections (at most 3 rounds), merge the approved PRs to main one at a time behind green checks, and report. Default one cycle. Does not release; offers /app_release at the end.
+description: Run one open-jarvis-talk sprint cycle over GitHub Issues. Refine the open issues into a ranked sprint, stop for the founder's approval, then implement every approved issue in parallel worktree developers, review each PR with code-reviewer, fix rejections (at most 2 rounds), merge the approved PRs to main one at a time behind green checks, and report. Default one cycle. Does not release; offers /app_release at the end.
 argument-hint: '[cycles=N] [goal="..."] [issues=12,15] [skip-refinement] [plan-only] [dry-run] [workflow]'
 allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Agent, Workflow, Skill, TaskCreate, TaskUpdate, TaskList, Bash(gh issue:*), Bash(gh pr:*), Bash(gh label:*), Bash(gh api:*), Bash(gh repo:*), Bash(git:*)
 ---
@@ -36,7 +36,7 @@ Argument: `$ARGUMENTS`
   | Work | `subagent_type` | model / effort |
   |---|---|---|
   | Implement one issue to a PR; fix a rejected PR | `developer` (worktree) | opus / xhigh |
-  | Review one PR against its issue; comment the verdict; set the label | `code-reviewer` | opus / xhigh |
+  | Quick blocker-only review of one PR; comment the verdict; set the label | `code-reviewer` | sonnet / high |
   | Read the repo, issues, PRs, git history | `researcher` | sonnet / medium |
   | Claude Code plugin docs, Apple Speech, Kokoro, uv and other external facts | `web-researcher` | sonnet / medium |
   | Run the checks; PASS/FAIL only | `checks-runner` | sonnet / low |
@@ -173,11 +173,12 @@ background; as each returns, dispatch that issue's `code-reviewer` right away, a
 rejection that issue's fix round. Never wait for the whole wave before reviewing.
 **Workflow (only with `workflow` or when the user asks).** The same shape as one script:
 `pipeline(sprint, implement, review, fixLoopUntilApproved)`, the same agent pins, a small
-`{issue, pr, branch, verdict, rounds, blockers}` return per issue, and at most 3 fix rounds
+`{issue, pr, branch, verdict, rounds, blockers}` return per issue, and at most 2 fix rounds
 enforced in the script.
 
 **Implement prompt** (the lifecycle is in the agent file; the prompt carries only this):
-the issue number and title; the cycle goal; the `common.md` path; the **invariant** the change
+the issue number and title; the cycle goal; the `common.md` path; "add a focused test for each
+behavior change, so review can be quick"; the **invariant** the change
 must guarantee, not a mechanism (you have not read the code); any stale ACs rewritten per step 2;
 for a hub, its dependents; for a wave sharing `hooks/register.tsx`, "keep the diff local: add
 code next to what it extends, do not move or reformat untouched code"; **"in this cycle, leave
@@ -189,20 +190,24 @@ the PR head SHA". A `blocked` result skips review and goes to the report.
 **Review prompt:** the issue number, the PR number and head SHA, the `common.md` path, the same
 version rule ("a missing version bump is not a finding in this cycle; a wrong patch/minor call
 on the Docs line is"), "post the verdict as a PR comment and set the label; never
-`gh pr review --approve`; never merge or push", and "return only your structured verdict".
+`gh pr review --approve`; never merge or push", "quick and blocker-only: reject only for a
+failing check, an unmet AC, a real user-facing bug, an approval-rule or privacy break, or a core
+change with no test; everything else is a note and you still approve", and "return only your
+structured verdict". **Approved with notes counts as approved:** it goes to the merge queue,
+and the notes go in the report, never into another fix round.
 A verdict of **Owner review** (code good, needs a founder step such as a voice check on a Mac)
 is not merged by this cycle; it goes to report table B.
 
-**Fix loop** (per rejected issue, in parallel across issues; **at most 3 fix rounds**):
+**Fix loop** (per rejected issue, in parallel across issues; **at most 2 fix rounds**):
 1. A developer on the **existing PR branch**, pointed at the newest `## Review: ❌ Rejected`
    comment. It applies every valid required change, answers each one on the PR (`done` or
    `no: <why>`), pushes, and sets `status:review`.
 2. A fresh `code-reviewer` for that PR only. Hand it what changed and the developer's replies;
    do not add premises the first review did not establish. A round that pushed nothing but
    answered every item on the PR still gets re-reviewed.
-3. Before dispatching round N, count rounds from the rejection comments on the PR. Round 3
+3. Before dispatching round N, count rounds from the rejection comments on the PR. Round 2
    rejected → stop: leave `status:rejected`, comment the residual blocker on the PR, carry it to
-   the report. A rejection after round 3 is the founder's call, not a 4th round.
+   the report. A rejection after round 2 is the founder's call, not a 4th round.
 
 Stop early and ask the founder instead of spending a round when:
 - a required change asks for something the developer may not do (run the listener or
@@ -254,7 +259,7 @@ merged and whose status is clean (`git worktree prune` after), and reports anyth
 ## 7. Report  *(you)*
 
 **A. Sprint results:** | Issue | What was done | Fixed in review | Final status | PR / merge sha |
-(Final status: merged, held, blocked, rejected after 3 rounds, owner review.)
+(Final status: merged, held, blocked, rejected after 2 rounds, owner review.)
 
 **B. You test this:** | Issue | What to check on your Mac (voice, microphone, speech, setup) | Why |
 Include every Owner review PR with its checklist; those stay open until you say merge.
