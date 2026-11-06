@@ -1158,6 +1158,13 @@ const ACCENT = '#D97757'
 const ACCENT_LIGHT = '#F0A27F'
 const IDLE = '#9A9A9A'
 
+/**
+ * The orb's tap layer: one blank Button as wide as the orb, stretched to its
+ * height. One line only: the desktop joins lines and cuts a long one with "…".
+ * Under the pointer the desktop draws its hover box; the plugin cannot hide it.
+ */
+const ORB_TAP_BLANK = '\u00a0'.repeat(50)
+
 /** The animated orb, as one SVG the desktop runs CSS animation in. */
 function orb(state: TalkState): string {
   const color = state === 'paused' || state === 'off' ? IDLE : ACCENT
@@ -1499,7 +1506,26 @@ export const register: Register = on => {
 
         <Box flexDirection="column" alignItems="center" gap={1}>
           {Svg ? (
-            <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
+            <Box key="orb" position="relative">
+              <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
+              {hint !== null && (
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  bottom={0}
+                  overflow="hidden"
+                  flexDirection="row"
+                  alignItems="stretch"
+                  justifyContent="center"
+                >
+                  <Button key="tap-orb-area" plain onPress={() => tapOrb($)}>
+                    {ORB_TAP_BLANK}
+                  </Button>
+                </Box>
+              )}
+            </Box>
           ) : (
             <Text color="claude" bold>
               {state === 'listening' ? '((( ● )))' : state === 'speaking' ? '▁▃▅▇▅▃▁' : '●'}

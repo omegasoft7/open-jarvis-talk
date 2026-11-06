@@ -54,7 +54,7 @@ These annotated pictures are illustrations of the Claude desktop app. The plugin
 
 ![The setup screen: checks of the Mac, what will be installed and its size, and the Install button](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/02-first-run-setup.png)
 
-**3. Talk about the session.** Tap the words under the orb to send what you said at once, or to interrupt Jarvis.
+**3. Talk about the session.** Tap the orb, or the words under it, to send what you said at once, or to interrupt Jarvis.
 
 ![The conversation panel while Jarvis speaks, with the orb and Speaking… tap to interrupt](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/03-talking.png)
 
@@ -144,10 +144,10 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
 
 - **🎙️ at the start of the footer under the message box** starts a conversation. While one is running, it shows that conversation again.
 - **⚙ at the top of the conversation** opens the [settings](#settings).
-- **Tap the words under the orb** ("Listening…", "Thinking…", "Speaking…"):
+- **Tap the orb or the words under it** ("Listening…", "Thinking…", "Speaking…"). On the desktop the orb shows a light box under the pointer when it can be tapped. On the terminal, tap the words:
   - While you talk, a tap sends what you said right away, without waiting for the pause.
   - While Jarvis thinks or speaks, a tap stops it, and it listens to you again.
-  - The tap target appears a moment after each change (under a second), and quick double taps count once, so a tap meant for "send now" never stops Jarvis just as it starts thinking.
+  - The tap target appears a moment after each change (under a second), and quick double taps (or the orb and the words at once) count once, so a tap meant for "send now" never stops Jarvis just as it starts thinking.
 - **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
 - Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying goodbye ends the conversation: "goodbye", "stop", or "okay, thank you, that's it, you can go". Jarvis also recognises a goodbye said in other words and closes the conversation itself.
 - Drafted commands carry your request as you said it, tidied up. Jarvis adds context only when the session would not understand the request without it, and leaves the how to the session: "ask it to finalize everything" is sent as "Please finalize everything.", not as a list of steps.
