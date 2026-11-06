@@ -48,7 +48,7 @@ GLOBAL_ONLY = {"handover", "do_not_commit", "do_not_add_comments", "brief", "sta
 
 # The repo is public and the plugin ships from the repo root, so nothing personal may land
 # in the tooling layer or the lesson pile.
-PUBLIC_SCAN_DIRS = (".claude", ".agent-feedback")
+PUBLIC_SCAN_DIRS = (".claude",)
 PUBLIC_SKIP_DIRS = {"node_modules", ".git", "__pycache__", "worktrees"}
 PUBLIC_SKIP_FILES = {"settings.local.json"}
 TEXT_SUFFIXES = {"", ".md", ".py", ".sh", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".json",

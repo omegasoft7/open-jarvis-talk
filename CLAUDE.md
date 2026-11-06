@@ -30,7 +30,7 @@ The repository is **public**: never commit personal paths, emails, tokens or con
 3. Type-check `hooks` and `types` with tsc against `.claude-plugin/types/` when that folder exists. The test file has known pre-existing type errors, so it is not part of this check.
 4. `bash -n setup/jarvis-setup.sh` · `python3 -m py_compile voice/speak.py` · `swiftc -typecheck voice/listen.swift` (when swiftc is present), for changes there.
 
-A behavior change comes with a test for it and a README update. The version in `.claude-plugin/plugin.json` is bumped once per release (patch for fixes, minor for features): by `/app_release`, or in the change itself when it ships on its own outside a cycle. Cycle PRs leave it alone.
+A behavior change comes with a test for it and a README update. The version in `.claude-plugin/plugin.json` is bumped once per cycle (patch for fixes, minor for features): after its last merge, `/app_cycle` lands one version-bump PR. A change made outside a cycle bumps it itself. Cycle PRs leave it alone. There is no separate release step: merging to `main` with a new version is the release.
 Fix a failing check; never weaken or skip it.
 
 ## Plugin rules learned the hard way
@@ -42,11 +42,11 @@ Fix a failing check; never weaken or skip it.
 
 ## Work routing
 
-- Full cycle over GitHub Issues: `/app_cycle`. Release: `/app_release`. Run every check and fix what fails: `/app_finalize_and_fix`.
+- Full cycle over GitHub Issues, version bump included: `/app_cycle`. Run every check and fix what fails: `/app_finalize_and_fix`.
 - Named agents live in `.claude/agents/`: `developer`, `code-reviewer`, `researcher`, `web-researcher`, `checks-runner`. Pin `subagent_type`, `model` and `effort` on every spawn.
 - The tooling inventory is `.claude/README.md`. Add tooling with `/add-tooling`, audit it with `/validate-tooling`; both keep the inventory current.
 - `handover`, `do_not_commit`, `do_not_add_comments`, `brief`, `staff` and `reclaim_machine` are user-level skills: available here without a copy in this repo.
 
 ## Agent feedback log
 
-At the end of every job, run `/app_feedback` silently: record one concrete, repeatable lesson from this session in `.agent-feedback/`, if there is one. Never run `/feedbacks_check`; the maintainer runs it.
+At the end of every job, run `/app_feedback` silently: record one concrete, repeatable lesson from this session in `.agent-feedback/`, if there is one. That folder is gitignored: lessons stay on this Mac and are never pushed. Never run `/feedbacks_check`; the maintainer runs it.

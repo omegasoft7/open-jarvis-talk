@@ -102,7 +102,7 @@ line, and Step 4 was applied to every file you touched.
 - **The 1024-char limit is a skill rule.** Agents and commands get the 1536-char listing cap
   (a WARN).
 - **Renaming, splitting or merging is not a validation fix.** `add-tooling` owns those.
-- **`public-leak` scans `.claude/` and `.agent-feedback/` only**, skipping
+- **`public-leak` scans `.claude/` only** (`.agent-feedback/` is gitignored and local), skipping
   `settings.local.json`. It does not police product code or `README.md`.
 - **`dup-global` reads your own `~/.claude`**, so its WARNs differ between machines; the FAIL
   set (the six user-level skills) is fixed in the script.
