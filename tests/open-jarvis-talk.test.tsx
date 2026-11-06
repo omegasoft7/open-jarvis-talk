@@ -1088,6 +1088,7 @@ test('when the orb itself is pressed while thinking, it should stop as the words
   expect(String(layer[0]?.props.label ?? '').trim()).toBe('')
   expect(layer[0]?.text.trim()).toBe('')
   expect(layer[0]?.text).not.toContain('\n')
+  expect(layer[0]?.text.length).toBeLessThanOrEqual(18)
 
   await voice.press({ key: 'tap-orb-area' })
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()

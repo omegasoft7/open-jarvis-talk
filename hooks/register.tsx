@@ -1159,11 +1159,14 @@ const ACCENT_LIGHT = '#F0A27F'
 const IDLE = '#9A9A9A'
 
 /**
- * The orb's tap layer: one blank Button as wide as the orb, stretched to its
- * height. One line only: the desktop joins lines and cuts a long one with "…".
- * Under the pointer the desktop draws its hover box; the plugin cannot hide it.
+ * The orb's tap layer: one blank Button over the middle circle (r 62 of the
+ * 360 x 240 drawing), sized by percentages so it fits whatever unit the
+ * surface measures in. One short line: the desktop joins lines and cuts a
+ * long one with "…". Under the pointer the desktop draws its hover box; the
+ * plugin cannot hide it.
  */
-const ORB_TAP_BLANK = '\u00a0'.repeat(50)
+const ORB_CORE = { width: '35%', height: '52%' }
+const ORB_TAP_BLANK = '\u00a0'.repeat(18)
 
 /** The animated orb, as one SVG the desktop runs CSS animation in. */
 function orb(state: TalkState): string {
@@ -1515,14 +1518,21 @@ export const register: Register = on => {
                   left={0}
                   right={0}
                   bottom={0}
-                  overflow="hidden"
-                  flexDirection="row"
-                  alignItems="stretch"
                   justifyContent="center"
+                  alignItems="center"
                 >
-                  <Button key="tap-orb-area" plain onPress={() => tapOrb($)}>
-                    {ORB_TAP_BLANK}
-                  </Button>
+                  <Box
+                    width={ORB_CORE.width}
+                    height={ORB_CORE.height}
+                    overflow="hidden"
+                    flexDirection="row"
+                    alignItems="stretch"
+                    justifyContent="center"
+                  >
+                    <Button key="tap-orb-area" plain onPress={() => tapOrb($)}>
+                      {ORB_TAP_BLANK}
+                    </Button>
+                  </Box>
                 </Box>
               )}
             </Box>
