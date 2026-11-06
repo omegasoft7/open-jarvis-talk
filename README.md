@@ -115,6 +115,26 @@ In the Claude desktop app, where `/plugin` doesn't run:
 
 Restart Claude Code after installing so the plugin loads.
 
+## Update
+
+Claude Code doesn't check this marketplace for new versions by itself. It keeps its own copy of the marketplace, so a new version stays hidden until that copy is refreshed.
+
+1. Refresh the marketplace copy, from a shell:
+   ```bash
+   claude plugin marketplace update open-jarvis-talk
+   ```
+2. Update the plugin. Either run:
+   ```bash
+   claude plugin update open-jarvis-talk@open-jarvis-talk
+   ```
+   or, in the Claude desktop app:
+   1. Open **Claude Code**, then **Customize**, then **Plugins**.
+   2. Choose **Yours** and scroll down to **Open Jarvis Talk**.
+   3. The **Update** button is now on. Click it.
+3. Restart Claude Code, or type `/reload-plugins` in a session, so the new version loads.
+
+Repeat these steps on every computer where the plugin is installed. Each one keeps its own copy of the marketplace.
+
 ## First use: guided setup
 
 The first time you press 🎙️, a setup screen opens. Nothing is installed until you press **Install**. The screen:
@@ -260,6 +280,7 @@ Common problems:
 - **"macOS Dictation is turned off"**: turn it on in System Settings > Keyboard > Dictation, then press **Resume**.
 - **Listening stops at once**: check that Claude is allowed to use the microphone, in System Settings > Privacy & Security > Microphone.
 - **Research fails**: run `claude` in a terminal once, and sign in if it asks.
+- **No update shows up**: refresh the marketplace copy first, as in [Update](#update).
 
 ## Development
 

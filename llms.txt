@@ -13,3 +13,9 @@
 
 - `claude plugin marketplace add omegasoft7/open-jarvis-talk`
 - `claude plugin install open-jarvis-talk@open-jarvis-talk`
+
+## Update
+
+- `claude plugin marketplace update open-jarvis-talk` (Claude Code doesn't refresh this marketplace by itself)
+- `claude plugin update open-jarvis-talk@open-jarvis-talk`, or in the desktop app: Claude Code > Customize > Plugins > Yours > Open Jarvis Talk > Update
+- Restart Claude Code, or run `/reload-plugins`
