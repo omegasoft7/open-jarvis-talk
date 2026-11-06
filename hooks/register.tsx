@@ -94,9 +94,9 @@ const PAUSES: readonly Choice[] = ['1.5', '2', '3', '4', '5'].map(seconds => ({
   value: seconds,
   label: `${seconds} s`,
 }))
-const ON_OFF = (on: string, off: string): readonly Choice[] => [
-  { value: 'on', label: on },
-  { value: 'off', label: off },
+const ON_OFF = (onLabel: string, offLabel: string): readonly Choice[] => [
+  { value: 'on', label: onLabel },
+  { value: 'off', label: offLabel },
 ]
 const MAX_INSTRUCTIONS = 2000
 
