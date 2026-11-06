@@ -1079,14 +1079,20 @@ test('when two taps land at the same moment while thinking, it should stop once 
 
 test('when the orb itself is pressed while thinking, it should stop as the words under it do', async ($, on) => {
   const { clock, voice, rounds } = await armedListening($, on)
-  expect(await voice.find({ type: 'Button', key: 'tap-orb-area' })).toBeUndefined()
+  expect(await voice.find({ type: 'Button', key: 'tap-orb-area-0' })).toBeUndefined()
   await clock.advance(ARMED)
-  const area = await voice.find({ type: 'Button', key: 'tap-orb-area' })
-  // The layer over the orb draws nothing visible: its label and text are blank.
-  expect(String(area?.props.label ?? '').trim()).toBe('')
-  expect(area?.text.trim()).toBe('')
+  // The layer over the orb draws nothing: short blank rows, no label, no line breaks
+  // (the desktop joins lines and cuts a long one with "…").
+  const rows = (await voice.findAll({ type: 'Button' })).filter(b => b.key?.startsWith('tap-orb-area-'))
+  expect(rows.length).toBeGreaterThan(1)
+  for (const row of rows) {
+    expect(String(row.props.label ?? '').trim()).toBe('')
+    expect(row.text.trim()).toBe('')
+    expect(row.text).not.toContain('\n')
+    expect(row.text.length).toBeLessThanOrEqual(24)
+  }
 
-  await voice.press({ key: 'tap-orb-area' })
+  await voice.press({ key: 'tap-orb-area-2' })
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()
 
   expect(await voice.findAll({ type: 'Text', text: /Stopped\. Listening again\./ })).toHaveLength(1)
@@ -1098,7 +1104,7 @@ test('when the orb and the words under it are pressed together, it should count 
   const { clock, voice, rounds } = await armedListening($, on)
   await clock.advance(ARMED)
 
-  await Promise.all([voice.press({ key: 'tap-orb-area' }), voice.press({ key: 'tap-orb' })])
+  await Promise.all([voice.press({ key: 'tap-orb-area-0' }), voice.press({ key: 'tap-orb' })])
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()
 
   expect(await voice.findAll({ type: 'Text', text: /Stopped\. Listening again\./ })).toHaveLength(1)
