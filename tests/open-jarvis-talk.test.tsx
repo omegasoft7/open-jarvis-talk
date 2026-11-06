@@ -1081,7 +1081,10 @@ test('when the orb itself is pressed while thinking, it should stop as the words
   const { clock, voice, rounds } = await armedListening($, on)
   expect(await voice.find({ type: 'Button', key: 'tap-orb-area' })).toBeUndefined()
   await clock.advance(ARMED)
-  expect(await voice.find({ type: 'Button', key: 'tap-orb-area' })).toBeDefined()
+  const area = await voice.find({ type: 'Button', key: 'tap-orb-area' })
+  // The layer over the orb draws nothing visible: its label and text are blank.
+  expect(String(area?.props.label ?? '').trim()).toBe('')
+  expect(area?.text.trim()).toBe('')
 
   await voice.press({ key: 'tap-orb-area' })
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()

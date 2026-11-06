@@ -1,6 +1,6 @@
 {
   "name": "open-jarvis-talk",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Open Jarvis Talk: talk to your Claude Code session by voice. It knows the session, answers questions, researches, and drafts commands you approve before they are sent.",
   "author": {
     "name": "omegasoft7"

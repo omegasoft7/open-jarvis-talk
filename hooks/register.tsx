@@ -1506,12 +1506,7 @@ export const register: Register = on => {
               <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
               {hint !== null && (
                 <Box position="absolute" top={0} left={0} right={0} bottom={0} overflow="hidden">
-                  <Button
-                    key="tap-orb-area"
-                    label={`${STATE_WORDS[state]} · ${hint}`}
-                    plain
-                    onPress={() => tapOrb($)}
-                  >
+                  <Button key="tap-orb-area" plain onPress={() => tapOrb($)}>
                     <Text>{ORB_TAP_AREA}</Text>
                   </Button>
                 </Box>
