@@ -1077,6 +1077,32 @@ test('when two taps land at the same moment while thinking, it should stop once 
   await voice.unmount()
 })
 
+test('when the orb itself is pressed while thinking, it should stop as the words under it do', async ($, on) => {
+  const { clock, voice, rounds } = await armedListening($, on)
+  expect(await voice.find({ type: 'Button', key: 'tap-orb-area' })).toBeUndefined()
+  await clock.advance(ARMED)
+  expect(await voice.find({ type: 'Button', key: 'tap-orb-area' })).toBeDefined()
+
+  await voice.press({ key: 'tap-orb-area' })
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+
+  expect(await voice.findAll({ type: 'Text', text: /Stopped\. Listening again\./ })).toHaveLength(1)
+  expect(rounds()).toBe(2)
+  await voice.unmount()
+})
+
+test('when the orb and the words under it are pressed together, it should count once', async ($, on) => {
+  const { clock, voice, rounds } = await armedListening($, on)
+  await clock.advance(ARMED)
+
+  await Promise.all([voice.press({ key: 'tap-orb-area' }), voice.press({ key: 'tap-orb' })])
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+
+  expect(await voice.findAll({ type: 'Text', text: /Stopped\. Listening again\./ })).toHaveLength(1)
+  expect(rounds()).toBe(2)
+  await voice.unmount()
+})
+
 test('settings: ⚙ opens them, the conversation pauses; saved choices reach voice, listening and answers', async ($, on) => {
   mock.clock(on)
   mock.store(on)

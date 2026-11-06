@@ -1158,6 +1158,9 @@ const ACCENT = '#D97757'
 const ACCENT_LIGHT = '#F0A27F'
 const IDLE = '#9A9A9A'
 
+/** Blank text that fills the orb, so a press anywhere on it lands on the Button laid over it. */
+const ORB_TAP_AREA = Array.from({ length: 10 }, () => ' '.repeat(34)).join('\n')
+
 /** The animated orb, as one SVG the desktop runs CSS animation in. */
 function orb(state: TalkState): string {
   const color = state === 'paused' || state === 'off' ? IDLE : ACCENT
@@ -1499,7 +1502,21 @@ export const register: Register = on => {
 
         <Box flexDirection="column" alignItems="center" gap={1}>
           {Svg ? (
-            <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
+            <Box key="orb" position="relative">
+              <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
+              {hint !== null && (
+                <Box position="absolute" top={0} left={0} right={0} bottom={0} overflow="hidden">
+                  <Button
+                    key="tap-orb-area"
+                    label={`${STATE_WORDS[state]} · ${hint}`}
+                    plain
+                    onPress={() => tapOrb($)}
+                  >
+                    <Text>{ORB_TAP_AREA}</Text>
+                  </Button>
+                </Box>
+              )}
+            </Box>
           ) : (
             <Text color="claude" bold>
               {state === 'listening' ? '((( ● )))' : state === 'speaking' ? '▁▃▅▇▅▃▁' : '●'}
