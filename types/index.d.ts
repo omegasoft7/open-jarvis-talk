@@ -58,6 +58,7 @@ declare module 'claude-code' {
       isOpen: boolean
       talk: TalkState
       heard: string
+      tapArmed: boolean
       setup: Setup | null
       settings: JarvisSettings
       settingsDraft: JarvisSettings | null
