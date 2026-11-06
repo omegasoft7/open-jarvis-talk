@@ -1,5 +1,5 @@
 ---
-description: Run one open-jarvis-talk sprint cycle over GitHub Issues. Refine the open issues into a ranked sprint, stop for the founder's approval, then implement every approved issue in parallel worktree developers, review each PR with code-reviewer, fix rejections (at most 2 rounds), merge the approved PRs to main one at a time behind green checks, and report. Default one cycle. Does not release; offers /app_release at the end.
+description: Run one open-jarvis-talk sprint cycle over GitHub Issues. Refine the open issues into a ranked sprint, stop for the founder's approval, then implement every approved issue in parallel worktree developers, review each PR with code-reviewer, fix rejections (at most 2 rounds), merge the approved PRs to main one at a time behind green checks, land one version-bump PR, and report. Default one cycle. No tags or GitHub Releases.
 argument-hint: '[cycles=N] [goal="..."] [issues=12,15] [skip-refinement] [plan-only] [dry-run] [workflow]'
 allowed-tools: AskUserQuestion, Read, Write, Edit, Bash, Agent, Workflow, Skill, TaskCreate, TaskUpdate, TaskList, Bash(gh issue:*), Bash(gh pr:*), Bash(gh label:*), Bash(gh api:*), Bash(gh repo:*), Bash(git:*)
 ---
@@ -182,7 +182,7 @@ behavior change, so review can be quick"; the **invariant** the change
 must guarantee, not a mechanism (you have not read the code); any stale ACs rewritten per step 2;
 for a hub, its dependents; for a wave sharing `hooks/register.tsx`, "keep the diff local: add
 code next to what it extends, do not move or reformat untouched code"; **"in this cycle, leave
-`version` in `.claude-plugin/plugin.json` unchanged: `/app_release` bumps it once; put the bump
+`version` in `.claude-plugin/plugin.json` unchanged: the cycle bumps it once after the last merge (step 6); put the bump
 this change needs (patch or minor) on the PR's Docs line"**; README and `llms.txt` updates stay
 in the PR; the `/do_not_add_comments` line when active; "return only your structured result plus
 the PR head SHA". A `blocked` result skips review and goes to the report.
@@ -221,7 +221,7 @@ Stop early and ask the founder instead of spending a round when:
 ## 6. Merge queue  *(one general-purpose agent per wave, strictly one PR at a time)*
 
 Merging puts code on `main`; fresh installs pick it up right away, existing users only when
-`/app_release` bumps the version. So `main` must stay green and releasable after every merge.
+the version changes (the bump at the end of step 6). So `main` must stay green after every merge.
 
 Queue: this wave's PRs whose issue is `status:approved`, in rank order. One `general-purpose`
 (sonnet, no worktree) agent works the whole queue and returns one line per PR
@@ -253,6 +253,12 @@ waves are done, one `checks-runner` runs every check on a fresh detached worktre
 `origin/main` and reports `<sha> green` or the failures. A red `main` is fixed before anything
 else: one developer on a fix issue, through the normal review.
 
+**Version bump.** When at least one behavior change merged, the same merge-queue agent lands
+one version-bump PR: `.claude-plugin/plugin.json` `version` (minor if any merged PR is a
+feature, else patch, per their Docs lines), gated on the checks like any other PR, then
+squash-merged. That is the release: existing users get it through the plugin marketplace
+update. No tag, no GitHub Release.
+
 Afterwards one `general-purpose` agent prunes worktrees this cycle created whose branch is
 merged and whose status is clean (`git worktree prune` after), and reports anything it left.
 
@@ -265,8 +271,7 @@ merged and whose status is clean (`git worktree prune` after), and reports anyth
 Include every Owner review PR with its checklist; those stay open until you say merge.
 
 **C. Next:** the final `main` SHA and its check verdict; open founder decisions; issues still
-labelled `status:todo`; the version bump the merged PRs call for (minor if any feature, else
-patch). Then offer `/app_release` in one line. Never run it unasked.
+labelled `status:todo`; the version `main` now carries.
 
 Multi-cycle: repeat steps 1–7, each with its own gate; only the last report consolidates.
 Keep labels honest throughout: every issue's label matches where it really is.
@@ -275,8 +280,8 @@ Keep labels honest throughout: every issue's label matches where it really is.
 
 - Never bypass the founder gate, and never treat approval as covering anything the proposal did
   not list.
-- No release, tag, version bump, force-push to `main`, or `gh pr review` of any kind in this
-  command.
+- No tag, no GitHub Release, no force-push to `main`, no `gh pr review` of any kind, and no
+  version bump except the one in step 6.
 - Never run the listener, `voice/speak.py`, or `setup/jarvis-setup.sh install|tools|dictation`
   from any agent; `check` is the only setup mode an agent may run.
 - Fix the code, never the check: no skipped tests, no `@ts-ignore`, no loosened config.

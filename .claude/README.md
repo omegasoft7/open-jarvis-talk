@@ -15,7 +15,7 @@ User-level skills that are available here without a copy in this repo: `handover
 
 | Path | What is in it | Written by | Read when |
 |---|---|---|---|
-| `.agent-feedback/*.md` | One lesson per file from a session that got something wrong; `.processed/` is the applied archive | every session, silently, via `/app_feedback` | harvested by the maintainer with `/feedbacks_check` |
+| `.agent-feedback/*.md` | One lesson per file from a session that got something wrong; `.processed/` is the applied archive. **Local only:** gitignored, never pushed. | every session, silently, via `/app_feedback` | harvested by the maintainer with `/feedbacks_check` |
 | GitHub Issues and PRs | The cycle's tickets, `status:*` labels, review verdicts as PR comments | `/app_cycle`, `developer`, `code-reviewer` | when picking up or reviewing work |
 | session scratchpad | Everything throwaway: logs, drafts, PR bodies, plans | anything | never; it does not survive the session |
 
@@ -36,8 +36,7 @@ and writes long output to a scratchpad file.
 
 | Command | What it does |
 |---|---|
-| `/app_cycle` | One sprint over GitHub Issues: refine into a ranked set, stop for approval, then implement, quickly review and fix (at most 2 rounds) each issue in parallel, merge green PRs one at a time, report. Options in the command. |
-| `/app_release` | Merges any remaining approved PRs, bumps the version in `.claude-plugin/plugin.json`, tags `v<version>`, creates the GitHub Release, comments on the shipped issues. |
+| `/app_cycle` | One sprint over GitHub Issues: refine into a ranked set, stop for approval, then implement, quickly review and fix (at most 2 rounds) each issue in parallel, merge green PRs one at a time, bump the version once, report. Options in the command. |
 | `/app_finalize_and_fix` | Runs every check on this checkout and fixes what fails, uncommitted; `--no-fix` reports only. |
 | `/council` | Five-lens review of a diff or plan (voice UX, plugin API, macOS privacy, setup and supply chain, docs truth) and one synthesized report. Runs `council.js`. |
 | `/app_feedback` | Writes this session's lessons to `.agent-feedback/`. Run at the end of every job, unprompted. |

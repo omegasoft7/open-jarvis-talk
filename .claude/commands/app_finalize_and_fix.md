@@ -70,5 +70,5 @@ at a green, uncommitted working tree and a summary. The founder decides what to 
    - `git status --short` and `git diff --stat`, separating files the fixer touched from changes
      that were already in the tree at step 2.
    - Judgment calls to review: stale-test updates, any behavior change (it then also needs a
-     README update and, at release time, a version bump: say which, patch or minor).
+     README update and, when it ships, a version bump: say which, patch or minor).
    End with: the tree is green and uncommitted, ready for review.

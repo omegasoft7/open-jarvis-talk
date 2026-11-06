@@ -71,13 +71,9 @@ met the gate. Do not summarize the whole session.
 
 ## Gotchas
 
-- **This repo is public.** A lesson file is published with the next push, and it ships in
-  every user's plugin install (the marketplace source is the repo root). Write no absolute
-  home paths (use `~` or a repo-relative path), no user names, emails, tokens, session or
-  run ids, UUIDs, and no quotes of what the user said to Jarvis or of transcript content.
-  Describe the mistake, not the person.
+- **Lessons stay local.** `.agent-feedback/` is gitignored: never `git add -f` it, never
+  push it. Still write no tokens or keys, and describe the mistake, not the person.
 - Writes to `.agent-feedback/` and nowhere else.
-- Do not commit unless the user asked, or the calling command commits these files by exact
-  path.
+- Never commit these files.
 - **Never run `/feedbacks_check` yourself, and never offer to.** Do not report how many logs
   are waiting.
