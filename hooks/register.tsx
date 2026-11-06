@@ -1158,8 +1158,12 @@ const ACCENT = '#D97757'
 const ACCENT_LIGHT = '#F0A27F'
 const IDLE = '#9A9A9A'
 
-/** Blank text that fills the orb, so a press anywhere on it lands on the Button laid over it. */
-const ORB_TAP_AREA = Array.from({ length: 10 }, () => ' '.repeat(34)).join('\n')
+/**
+ * The orb's tap layer: rows of blank Buttons stacked over it. The desktop draws
+ * a Button on one line and cuts a long one with "…", so each row stays short.
+ */
+const ORB_TAP_ROWS = [0, 1, 2, 3, 4]
+const ORB_TAP_BLANK = '\u00a0'.repeat(24)
 
 /** The animated orb, as one SVG the desktop runs CSS animation in. */
 function orb(state: TalkState): string {
@@ -1505,10 +1509,22 @@ export const register: Register = on => {
             <Box key="orb" position="relative">
               <Svg source={orb(state)} alt={STATE_WORDS[state]} width={240} height={160} isInteractive />
               {hint !== null && (
-                <Box position="absolute" top={0} left={0} right={0} bottom={0} overflow="hidden">
-                  <Button key="tap-orb-area" plain onPress={() => tapOrb($)}>
-                    <Text>{ORB_TAP_AREA}</Text>
-                  </Button>
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  bottom={0}
+                  overflow="hidden"
+                  flexDirection="column"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  {ORB_TAP_ROWS.map(row => (
+                    <Button key={`tap-orb-area-${row}`} plain onPress={() => tapOrb($)}>
+                      {ORB_TAP_BLANK}
+                    </Button>
+                  ))}
                 </Box>
               )}
             </Box>
