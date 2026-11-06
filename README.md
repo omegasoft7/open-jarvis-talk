@@ -233,6 +233,7 @@ This is the full list, for users and reviewers.
 - **Contains a download-and-run command** (`setup/jarvis-setup.sh`). Setup runs only when you press **Install**. It downloads the voice model with `curl`. Those are data files checked against fixed SHA-256 checksums, and they are never run. It installs uv with pip from PyPI with pinned hashes, and Python packages pinned to exact versions. No downloaded script is run.
 - **Hooks an event that is also a call name** (`command.run`). It answers only its own two commands (above).
 - **Images and binary files.** The plugin ships only text files and its listing icon. The README's pictures and the intro video are on this repository's [`media`](https://github.com/omegasoft7/open-jarvis-talk/tree/media) branch, not in the plugin.
+- **`CLAUDE.md` at the plugin root is not loaded as project context.** `CLAUDE.md`, `.claude/` and `.agent-feedback/` are contributor tooling for working on this repository. They ship only because the plugin installs from the repository root, and the plugin never loads or runs them.
 - **Unrecognized fields in `plugin.json`.** `documentationUrl`, `supportUrl` and `privacyPolicyUrl` are the directory's own listing fields.
 
 </details>

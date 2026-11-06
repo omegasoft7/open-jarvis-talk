@@ -94,7 +94,7 @@ Arguments: `$ARGUMENTS`
   no issue comment.
 - Never force-push `main`; never move, delete or re-push a published tag. A bad release is fixed
   by a new patch release.
-- The version changes only in the release PR, and only in `.claude-plugin/plugin.json`.
+- The version changes only in `.claude-plugin/plugin.json`, once per release: in the release PR, or in a change that shipped on its own outside a cycle (step 1 then offers to tag it as-is). Cycle PRs leave it alone.
 - Never bypass a red check, and never weaken a check to get green.
 - Never run the listener, `voice/speak.py`, or `setup/jarvis-setup.sh install|tools|dictation`
   as part of a release.

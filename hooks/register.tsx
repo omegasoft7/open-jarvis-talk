@@ -163,8 +163,8 @@ const STYLE_VOICE: Record<ReplyStyle, string> = {
 
 /** How a <command> carries the user's request: relayed, not planned. The
  * session's agent decides how to do what was asked. */
-const COMMAND_RULES = `- The command relays the user's request; it is not your plan. Keep their intent, scope and level of detail, and tidy only the wording so it reads as a clear request. Never break it into steps, name files, pick an approach or add tasks they did not ask for: the session's agent knows its own work and decides what the request means and how to do it. "Ask it to finalize everything" becomes "Please finalize everything.", not a list of what finalizing involves.
-- Add to the request only what the agent needs to understand it, since it cannot see this talk with Jarvis: say what "it", "that" or "the bug" refers to, or include a detail the user gave earlier in this talk. Keep any such addition short and phrased as context, never as extra instructions.`
+const COMMAND_RULES = `- The command relays the user's request; it is not your plan. Keep their intent, scope and level of detail, and tidy only the wording so it reads as a clear request. Keep any steps, files or approach the user named, and never add steps, files to touch, an approach or tasks the user did not mention: the session's agent knows its own work and decides what the request means and how to do it. "Ask it to finalize everything" becomes "Please finalize everything.", not a list of what finalizing involves.
+- Add to the request only what the agent needs to understand it, since it cannot see this talk with Jarvis: say what "it", "that" or "the bug" refers to, naming the file when that is what the user meant, or include a detail the user gave earlier in this talk. Keep any such addition short and phrased as context, never as extra instructions.`
 
 function rules(chosen: JarvisSettings): string {
   return `[Jarvis side channel. This is NOT a turn of this session.]
@@ -310,7 +310,7 @@ async function askJarvis($: EngineInterface, question: string, isVoice: boolean)
       }
 
       const command = /<command>([\s\S]*?)<\/command>/.exec(text)
-      const isEnd = isVoice && !command && /<end\s*\/?>/i.test(text)
+      const isEnd = isVoice && /<end\s*\/?>/i.test(text)
       const shown =
         text
           .replace(/<command>[\s\S]*?<\/command>/g, '')
@@ -396,22 +396,29 @@ function takePid(child: Child, line: string): boolean {
 
 // A tap under the orb works only once the state it shows has held for
 // TAP_ARM_MS, so a tap aimed at "send now" that lands just as Jarvis starts
-// thinking does not stop it; taps closer together than TAP_GAP_MS count once.
+// thinking does not stop it. A tap disarms it until the next state has held
+// that long, so quick double taps, even two at the same moment, count once.
 const TAP_ARM_MS = 800
-const TAP_GAP_MS = 600
 let armTimer: { cancel: () => void } | null = null
-let lastTapAt = 0
+/** tapArmed as tapOrb checks it: written at once, before the atom catches up. */
+let isTapArmed = false
+
+/** Arms or disarms the tap under the orb. */
+async function setTapArmed($: EngineInterface, isArmed: boolean): Promise<void> {
+  isTapArmed = isArmed
+  await update($, tapArmed, () => isArmed)
+}
 
 /** Sets the conversation state; the tap under the orb waits to arm again. */
 async function setTalk($: EngineInterface, state: TalkState): Promise<void> {
   armTimer?.cancel()
   armTimer = null
-  await update($, tapArmed, () => false)
+  await setTapArmed($, false)
   await update($, talk, () => state)
   if (isActive(state)) {
     armTimer = $.clock.after(TAP_ARM_MS, () => {
       armTimer = null
-      void update($, tapArmed, () => true).catch(() => undefined)
+      void setTapArmed($, true).catch(() => undefined)
     })
   }
 }
@@ -504,25 +511,18 @@ async function listenOnce($: EngineInterface, mine: number): Promise<string | nu
  * so far at once instead of waiting for the pause; while thinking or speaking,
  * stops Jarvis and listens again. */
 async function tapOrb($: EngineInterface): Promise<void> {
-  if (!(await read($, tapArmed))) {
-    jlog($, 'tap ignored: the state just changed')
+  if (!isTapArmed) {
+    jlog($, 'tap ignored: the state just changed or was tapped already')
 
     return
   }
-  const now = await $.clock.now()
-  if (now - lastTapAt < TAP_GAP_MS) {
-    jlog($, 'tap ignored: too soon after the last one')
-
-    return
-  }
+  // One tap per state, taken before any await so a press at the same moment
+  // finds it gone; the next state arms it again after TAP_ARM_MS.
+  await setTapArmed($, false)
   const state = await read($, talk)
-  if (state === 'listening' && (!listener || (await read($, heard)).trim() === '')) return
-  lastTapAt = now
-  // One tap per state: the next state arms it again after TAP_ARM_MS.
-  await update($, tapArmed, () => false)
   if (state === 'listening') {
     const running = listener
-    if (!running) return
+    if (!running || (await read($, heard)).trim() === '') return
     jlog($, 'send now pressed')
     running.isSentEarly = true
     kill($, 'listener')
@@ -627,20 +627,29 @@ async function speak($: EngineInterface, text: string, mine: number): Promise<vo
 }
 
 const SEND = /^(yes|yeah|yep|ok|okay)?[\s,.!]*(send( it)?|approve( it)?|go ahead|do it)[\s.!]*$/i
-// A goodbye: the words say it outright ("goodbye", "you can go", "that's it")
-// and nothing else is asked ("okay, thank you, that's it, you can go").
-// Anything more ("that's it, now add tests") goes to Jarvis, which ends the
-// talk itself with <end/> when that is what the person meant.
+// A goodbye said outright: a farewell ("goodbye", "you can go", "stop") with
+// only thanks and filler around it ("okay, thank you, that's it, you can go").
+// "That's it" or "we're done" alone can also confirm a draft, so they count
+// only beside a farewell. A question, a letter outside plain English, or
+// anything more ("bye, now add tests") goes to Jarvis, which ends the talk
+// itself with <end/> when that is what the person meant.
 const FAREWELL =
-  /\b(good ?bye|bye( bye)?|see you( later| soon)?|good ?night|talk (to you )?(later|soon)|you can go( now)?|you can leave( now)?|you can stop( now)?|that's (it|all)|that is (it|all)|that'll be all|that will be all|we're done|we are done|i'm done|i am done|end( the)? conversation|stop listening|stop)\b/g
+  /\b(good ?bye|bye( bye)?|see you( later| soon)?|good ?night|talk (to you )?(later|soon)|you can go( now)?|you can leave( now)?|you can stop( now)?|end( the)? conversation|stop listening|stop)\b/g
+const DONE = /\b(that's (it|all)|that is (it|all)|that'll be all|that will be all|we're done|we are done|i'm done|i am done)\b/g
 const FILLER = new Set(
   'ok okay alright all right thanks thank you so much very lot a really jarvis great perfect cool nice good awesome fine then for now yes yeah well and oh again buddy man'.split(' '),
 )
+const PLAIN = /^[A-Za-z'’` ,.!-]+$/
 
 function isGoodbye(said: string): boolean {
+  if (!PLAIN.test(said)) return false
   const text = said.toLowerCase().replace(/[’`]/g, "'").replace(/[^a-z' ]+/g, ' ')
   if (!new RegExp(FAREWELL.source).test(text)) return false
-  const rest = text.replace(FAREWELL, ' ').split(/\s+/).filter(word => word !== '' && !FILLER.has(word))
+  const rest = text
+    .replace(FAREWELL, ' ')
+    .replace(DONE, ' ')
+    .split(/\s+/)
+    .filter(word => word !== '' && !FILLER.has(word))
 
   return rest.length === 0
 }

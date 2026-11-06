@@ -328,12 +328,94 @@ async function oneRound(
   return { said, closed, asked }
 }
 
-test('a goodbye with thanks around it ends the conversation without asking the model', async ($, on) => {
-  const { said, closed, asked } = await oneRound($, on, "Okay, thank you, that's it, you can go.")
+for (const words of ['Bye.', 'Stop.', "Okay, thank you, that's it, you can go."]) {
+  test(`when the user says ${JSON.stringify(words)}, the conversation should end without asking the model`, async ($, on) => {
+    const { said, closed, asked } = await oneRound($, on, words)
 
-  expect(asked).toEqual([])
-  expect(said).toEqual(['Okay, bye.'])
-  expect(closed).toContain('jarvis-voice')
+    expect(asked).toEqual([])
+    expect(said).toEqual(['Okay, bye.'])
+    expect(closed).toContain('jarvis-voice')
+  })
+}
+
+const NOT_GOODBYES = [
+  "That's all right.",
+  "That's all good.",
+  "That's all fine.",
+  "Yes, that's it.",
+  "Perfect, that's it.",
+  "That's it?",
+  "We're done?",
+  'Stop?',
+  '帮我把测试写完，bye。',
+  'stop，然后把这个改了',
+  'テストを書いて、OK、bye',
+  '테스트 끝내 줘, bye',
+]
+
+for (const words of NOT_GOODBYES) {
+  test(`when the user says ${JSON.stringify(words)}, Jarvis should answer and the conversation should stay open`, async ($, on) => {
+    const { said, closed, asked } = await oneRound($, on, words)
+
+    expect(asked.length).toBe(1)
+    expect(said).toEqual(['Sure.'])
+    expect(closed).not.toContain('jarvis-voice')
+  })
+}
+
+test('when the user says "Yes, that\'s it." with a draft pending, the conversation should stay open and the draft unsent', async ($, on) => {
+  const clock = mock.clock(on)
+  const closed: string[] = []
+  const asked: string[] = []
+  const submitted: string[] = []
+  const heard = ["let's add tests", "Yes, that's it."]
+  on('process.run', runReady)
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('ui.close', (_, e) => {
+    closed.push(e.id)
+
+    return { value: undefined }
+  })
+  on('prompt.submit', (_, e) => {
+    submitted.push(e.text)
+
+    return { text: e.text }
+  })
+  on('model.fork', (_, e) => {
+    asked.push(e.prompt)
+
+    return asked.length === 1 ? DRAFTING : { value: { isAnswered: true, text: 'Sure.', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      yield KOKORO_SPOKE
+    } else {
+      const words = heard.shift()
+      yield { stream: 'stdout' as const, text: words ? `listening\nfinal: ${words}\n` : 'error: done for this test\n' }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.settle()
+
+  expect(asked.length).toBe(2)
+  expect(submitted).toEqual([])
+  expect(closed).not.toContain('jarvis-voice')
+})
+
+test('when a reply drafts a command and also carries <end/>, the conversation should stay open', async ($, on) => {
+  const { said, closed } = await oneRound(
+    $,
+    on,
+    'Tell it to finalize everything.',
+    'Will do. <command>Please finalize everything.</command> <end/>',
+  )
+
+  expect(said[0]).toContain('send it')
+  expect(said[0]).not.toContain('<end')
+  expect(closed).not.toContain('jarvis-voice')
 })
 
 test('"that\'s it" followed by a request is not a goodbye: Jarvis answers it', async ($, on) => {
@@ -356,7 +438,8 @@ test('drafted commands relay the request instead of planning it', async ($, on) 
   const { asked } = await oneRound($, on, 'Ask the session to finalize everything.')
 
   expect(asked[0]).toContain('relays the user\'s request; it is not your plan')
-  expect(asked[0]).toContain('Never break it into steps')
+  expect(asked[0]).toContain('never add steps, files to touch, an approach or tasks the user did not mention')
+  expect(asked[0]).toContain('naming the file when that is what the user meant')
 })
 
 test('a tap right as the state changes is ignored; it works once the state has held', async ($, on) => {
@@ -925,6 +1008,73 @@ test('tapping while thinking stops: the late answer is dropped and it listens ag
   expect((await after.find({ type: 'Text', text: /Stopped\. Listening again\./ }))?.text).toBeDefined()
   expect(await after.find({ type: 'Text', text: /A late answer/ })).toBeUndefined()
   await after.unmount()
+})
+
+/** Listening with words heard and the tap armed; the final arrives on release; the model never answers. */
+async function armedListening($: Parameters<Parameters<typeof test>[1]>[0], on: Parameters<Parameters<typeof test>[1]>[1]) {
+  const clock = mock.clock(on)
+  let rounds = 0
+  let releaseFinal = () => {}
+  const finalGate = new Promise<void>(resolve => {
+    releaseFinal = resolve
+  })
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', runReady)
+  on('model.fork', async () => {
+    await new Promise<void>(() => {})
+
+    return { value: { isAnswered: true, text: 'never', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      yield KOKORO_SPOKE
+    } else {
+      rounds += 1
+      if (rounds === 1) {
+        yield { stream: 'stdout' as const, text: 'pid: 4242\nlistening\npartial: explain this\n' }
+        await finalGate
+        yield { stream: 'stdout' as const, text: 'final: explain this\n' }
+      } else {
+        yield { stream: 'stdout' as const, text: 'error: done for this test\n' }
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.advance(ARMED)
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  expect((await voice.find({ type: 'Text', text: /tap to send now/ }))?.text).toBeDefined()
+  releaseFinal()
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+  expect(await voice.find({ type: 'Text', text: /^Thinking…$/ })).toBeDefined()
+
+  return { clock, voice, rounds: () => rounds }
+}
+
+test('when listening was armed and Jarvis starts thinking, the tap should wait until thinking has held', async ($, on) => {
+  const { clock, voice } = await armedListening($, on)
+
+  expect(await voice.find({ type: 'Button', key: 'tap-orb' })).toBeUndefined()
+  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeUndefined()
+  await clock.advance(ARMED)
+  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeDefined()
+  expect(await voice.find({ type: 'Text', text: /Stopped\. Listening again\./ })).toBeUndefined()
+  await voice.unmount()
+})
+
+test('when two taps land at the same moment while thinking, it should stop once and listen again once', async ($, on) => {
+  const { clock, voice, rounds } = await armedListening($, on)
+  await clock.advance(ARMED)
+  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeDefined()
+
+  await Promise.all([voice.press({ key: 'tap-orb' }), voice.press({ key: 'tap-orb' })])
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+
+  expect(await voice.findAll({ type: 'Text', text: /Stopped\. Listening again\./ })).toHaveLength(1)
+  expect(rounds()).toBe(2)
+  await voice.unmount()
 })
 
 test('settings: ⚙ opens them, the conversation pauses; saved choices reach voice, listening and answers', async ($, on) => {

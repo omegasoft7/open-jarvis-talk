@@ -29,7 +29,7 @@ You review one open-jarvis-talk issue and its PR. You do not edit source, commit
 5. **Goal met?** Re-derive from the code, not the PR text.
 6. **Standards** (run them yourself; never trust the PR description):
    - `git fetch origin main`; run the checks on the PR head SHA. Hand `checks-runner` the head worktree path, or run its list yourself. Every test must pass.
-   - A behaviour change updates `README.md`, and the PR's **Docs** line says whether it calls for a patch or a minor bump. The PR must not edit `version` in `.claude-plugin/plugin.json` (`/app_release` bumps it once). If what the plugin runs, reads or sends changed, the README's "What it runs, reads and sends" list matches the code exactly. Missing: Reject.
+   - A behaviour change updates `README.md`, and the PR's **Docs** line says whether it calls for a patch or a minor bump. The version in `.claude-plugin/plugin.json` is bumped once per release: by `/app_release`, or in the change itself when it ships on its own outside a cycle. A cycle PR leaves it alone; a cycle PR that edits it, or a standalone change without its bump, is a finding. If what the plugin runs, reads or sends changed, the README's "What it runs, reads and sends" list matches the code exactly. Missing: Reject.
    - The PR body says `Closes #<n>` and its **Tests** section matches what you ran.
    - `hooks/register.tsx` uses only the plugin API (JSX against `h`, `$`), no DOM and no Node APIs. A PluginState change updates `types/index.d.ts` and the tests.
    - Public-repo hygiene: no personal absolute paths, emails, tokens or keys anywhere in the diff, and no images, audio or video on `main`.

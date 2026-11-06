@@ -144,7 +144,7 @@ const PERSONAS = [
     title: 'Maintainability, release & docs truth',
     lens: [
       'Docs drift: a line in README.md (Using it, Settings, What it runs, the directory-reviewer answers, Troubleshooting) or llms.txt that the change makes untrue.',
-      'Release hygiene: a user-visible change without a version bump in .claude-plugin/plugin.json, or a bump that disagrees with the change; `claude plugin validate .` and `claude plugin test .` expected to pass.',
+      'Release hygiene: the version in .claude-plugin/plugin.json is bumped once per release, by /app_release or in a change that ships on its own outside a cycle; cycle PRs leave it alone. A bump in a cycle PR, a standalone change shipped without its bump, or a bump that disagrees with the change (patch for fixes, minor for features); `claude plugin validate .` and `claude plugin test .` expected to pass.',
       'The plugin ships from the repo root and is public: no binary added to the plugin tree (pictures live on the media branch), no personal path, email or token in any file.',
       'Dead code, a setting with no remaining reader, naming that will mislead the next reader, comments that narrate a change instead of explaining a non-obvious why.',
     ].join('\n- '),
