@@ -54,7 +54,7 @@ These annotated pictures are illustrations of the Claude desktop app. The plugin
 
 ![The setup screen: checks of the Mac, what will be installed and its size, and the Install button](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/02-first-run-setup.png)
 
-**3. Talk about the session.** Tap the orb, or the words under it, to send what you said at once, or to interrupt Jarvis.
+**3. Talk about the session.** Tap the orb, or the words under it (or press Space), to send what you said at once, or to interrupt Jarvis. Press 🔊 beside a reply to hear it again.
 
 ![The conversation panel while Jarvis speaks, with the orb and Speaking… tap to interrupt](https://raw.githubusercontent.com/omegasoft7/open-jarvis-talk/media/docs/screenshots/03-talking.png)
 
@@ -168,6 +168,8 @@ setup/jarvis-setup.sh install              # add --no-voice to skip the natural 
   - While you talk, a tap sends what you said right away, without waiting for the pause.
   - While Jarvis thinks or speaks, a tap stops it, and it listens to you again.
   - The tap target appears a moment after each change (under a second), and quick double taps (or the orb and the words at once) count once, so a tap meant for "send now" never stops Jarvis just as it starts thinking.
+  - On the desktop, **Space** does the same as a tap while the conversation panel has the keyboard (it does once you open it or click in it). The words under the orb hold the keyboard focus, so **Enter** works too.
+- **🔊 beside any of Jarvis's replies** reads that reply aloud again. Jarvis stops listening first, so it never hears its own voice as you talking. When it finishes, it listens again; if the conversation was paused, it stays paused. Tap (or press Space) to stop it early. It works even when replies are set to text only.
 - **Pause** stops listening, and **Resume** starts again. **End conversation** closes the screen.
 - Saying **"send it"** sends the drafted command, and **"discard"** drops it. Saying goodbye ends the conversation: "goodbye", "stop", or "okay, thank you, that's it, you can go". Jarvis also recognises a goodbye said in other words and closes the conversation itself.
 - Drafted commands carry your request as you said it, tidied up. Jarvis adds context only when the session would not understand the request without it, and leaves the how to the session: "ask it to finalize everything" is sent as "Please finalize everything.", not as a list of steps.
@@ -222,7 +224,7 @@ This is the full list, for users and reviewers.
 | `~/.claude/jarvis/jarvis-listen` | Listens to the microphone and prints what you said as text. Built at setup from [`voice/listen.swift`](voice/listen.swift). |
 | `~/.claude/jarvis/kokoro/bin/python ~/.claude/jarvis/speak.py` | Speaks Jarvis's replies in the natural voice. The script is [`voice/speak.py`](voice/speak.py). |
 | `/usr/bin/say` | Speaks replies in the built-in Mac voice if the natural voice isn't installed or fails. |
-| `/bin/kill` | Stops the listener or the voice at once when you tap to send now or to interrupt, or press **Pause** or **End conversation**. |
+| `/bin/kill` | Stops the listener or the voice at once when you tap to send now or to interrupt, press 🔊 to hear a reply again, or press **Pause** or **End conversation**. |
 | `/bin/bash setup/jarvis-setup.sh check`, `install`, `tools` and `dictation` | Setup: checks the Mac, installs on **Install**, opens Apple's Command Line Tools installer, or opens the Dictation settings. |
 | `/bin/zsh -c` with short fixed scripts | Starts the listener and voices so each prints its process id first, and adds a line to `~/.claude/jarvis/jarvis.log`. The scripts are the `LISTEN`, `KOKORO` and `SAY` constants and the `jlog` function in [`hooks/register.tsx`](hooks/register.tsx). |
 | `claude -p`, started through a login shell so it can be found | Web research, as described above. |
