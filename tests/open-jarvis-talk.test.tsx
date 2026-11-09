@@ -479,14 +479,14 @@ test('a tap right as the state changes is ignored; it works once the state has h
   await $.command.run({ command: 'open-jarvis-talk', args: '' })
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
   // Speaking has only just started: no tap target yet, and a press does nothing.
-  expect(await voice.find({ type: 'Text', text: /tap to interrupt/ })).toBeUndefined()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to interrupt/ })).toBeUndefined()
   expect(await voice.find({ type: 'Text', text: /^Speaking…$/ })).toBeDefined()
   await clock.advance(300)
   expect(await voice.find({ type: 'Button', key: 'tap-orb' })).toBeUndefined()
   expect(killed).toEqual([])
 
   await clock.advance(600)
-  expect(await voice.find({ type: 'Text', text: /tap to interrupt/ })).toBeDefined()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to interrupt/ })).toBeDefined()
   await voice.press({ key: 'tap-orb' })
   expect(killed).toEqual(['9002'])
   // The tap disarms at once: a second press has nothing to land on.
@@ -906,7 +906,7 @@ test('tapping the state under the orb while listening sends what was said at onc
   await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.advance(ARMED)
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
-  expect((await voice.find({ type: 'Text', text: /tap to send now/ }))?.text).toBeDefined()
+  expect((await voice.find({ type: 'Text', text: /tap or press Space to send now/ }))?.text).toBeDefined()
   await voice.press({ key: 'tap-orb' })
   await voice.unmount()
 
@@ -995,7 +995,7 @@ test('tapping while thinking stops: the late answer is dropped and it listens ag
   await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.advance(ARMED)
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
-  expect((await voice.find({ type: 'Text', text: /tap to stop/ }))?.text).toBeDefined()
+  expect((await voice.find({ type: 'Text', text: /tap or press Space to stop/ }))?.text).toBeDefined()
   await voice.press({ key: 'tap-orb' })
   for (let wait = 0; wait < 50 && rounds < 2; wait++) await Promise.resolve()
   expect(rounds).toBe(2)
@@ -1045,7 +1045,7 @@ async function armedListening($: Parameters<Parameters<typeof test>[1]>[0], on: 
   await $.command.run({ command: 'open-jarvis-talk', args: '' })
   await clock.advance(ARMED)
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
-  expect((await voice.find({ type: 'Text', text: /tap to send now/ }))?.text).toBeDefined()
+  expect((await voice.find({ type: 'Text', text: /tap or press Space to send now/ }))?.text).toBeDefined()
   releaseFinal()
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()
   expect(await voice.find({ type: 'Text', text: /^Thinking…$/ })).toBeDefined()
@@ -1057,9 +1057,9 @@ test('when listening was armed and Jarvis starts thinking, the tap should wait u
   const { clock, voice } = await armedListening($, on)
 
   expect(await voice.find({ type: 'Button', key: 'tap-orb' })).toBeUndefined()
-  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeUndefined()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to stop/ })).toBeUndefined()
   await clock.advance(ARMED)
-  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeDefined()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to stop/ })).toBeDefined()
   expect(await voice.find({ type: 'Text', text: /Stopped\. Listening again\./ })).toBeUndefined()
   await voice.unmount()
 })
@@ -1067,7 +1067,7 @@ test('when listening was armed and Jarvis starts thinking, the tap should wait u
 test('when two taps land at the same moment while thinking, it should stop once and listen again once', async ($, on) => {
   const { clock, voice, rounds } = await armedListening($, on)
   await clock.advance(ARMED)
-  expect(await voice.find({ type: 'Text', text: /tap to stop/ })).toBeDefined()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to stop/ })).toBeDefined()
 
   await Promise.all([voice.press({ key: 'tap-orb' }), voice.press({ key: 'tap-orb' })])
   for (let wait = 0; wait < 200; wait++) await Promise.resolve()
@@ -1263,5 +1263,284 @@ test('the 🎙️ stays in the footer while talking, and brings the conversation
 
   const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
   await voice.press({ key: 'end' })
+  await voice.unmount()
+})
+
+test('when the tap arms, the state under the orb takes the keyboard focus, so Space presses it; a press before any words keeps it ready', async ($, on) => {
+  const clock = mock.clock(on)
+  const killed: string[] = []
+  const asked: string[] = []
+  let rounds = 0
+  let releaseWords = () => {}
+  const wordsArrive = new Promise<void>(resolve => {
+    releaseWords = resolve
+  })
+  let releaseListener = () => {}
+  const listenerExits = new Promise<void>(resolve => {
+    releaseListener = resolve
+  })
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', (_, e) => {
+    if (isSetup(e.argv)) return checked()
+    if (e.argv[0] === '/bin/kill') {
+      killed.push(e.argv[2] ?? '')
+      releaseListener()
+    }
+
+    return RAN
+  })
+  on('model.fork', (_, e) => {
+    asked.push(e.prompt)
+
+    return { value: { isAnswered: true, text: 'It is noon.', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      yield KOKORO_SPOKE
+    } else {
+      rounds += 1
+      if (rounds === 1) {
+        yield { stream: 'stdout' as const, text: 'pid: 4242\nlistening\n' }
+        await wordsArrive
+        yield { stream: 'stdout' as const, text: 'partial: what time is it\n' }
+        await listenerExits
+      } else {
+        yield { stream: 'stdout' as const, text: 'error: done for this test\n' }
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  expect(await voice.find({ type: 'Button', key: 'tap-orb' })).toBeUndefined()
+  await clock.advance(ARMED)
+  // Armed: drawn as a Button that takes the keyboard focus, so Space presses it.
+  const tap = await voice.find({ type: 'Button', key: 'tap-orb' })
+  expect(tap?.props.autoFocus).toBe(true)
+  // Nothing said yet: Space does nothing, and the tap stays ready.
+  await voice.press({ key: 'tap-orb' })
+  expect(killed).toEqual([])
+  expect(await voice.find({ type: 'Button', key: 'tap-orb' })).toBeDefined()
+
+  releaseWords()
+  for (let wait = 0; wait < 50; wait++) await Promise.resolve()
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to send now/ })).toBeDefined()
+  await voice.press({ key: 'tap-orb' })
+  await voice.unmount()
+
+  expect(killed).toEqual(['4242'])
+  for (let wait = 0; wait < 50 && asked.length === 0; wait++) await Promise.resolve()
+  expect(asked[0]).toContain('what time is it')
+})
+
+/** A talk where "hi" got the answer "It is noon."; the second listening round
+ * is set by `second`, and every later round ends the test with an error. */
+function talkWithOneAnswer(
+  on: Parameters<Parameters<typeof test>[1]>[1],
+  second: 'listen-until-killed' | 'error',
+) {
+  const events: string[] = []
+  const killed: string[] = []
+  let rounds = 0
+  let releaseListener = () => {}
+  const listenerExits = new Promise<void>(resolve => {
+    releaseListener = resolve
+  })
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', (_, e) => {
+    if (isSetup(e.argv)) return checked()
+    if (e.argv[0] === '/bin/kill') {
+      killed.push(e.argv[2] ?? '')
+      events.push(`kill ${e.argv[2] ?? ''}`)
+      releaseListener()
+    }
+
+    return RAN
+  })
+  on('model.fork', () => ({ value: { isAnswered: true, text: 'It is **noon**.', usage } }))
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      events.push(`say ${e.argv[4] ?? ''}`)
+      yield KOKORO_SPOKE
+    } else {
+      rounds += 1
+      events.push(`listen ${rounds}`)
+      if (rounds === 1) {
+        yield { stream: 'stdout' as const, text: 'listening\npartial: hi\nfinal: hi\n' }
+      } else if (rounds === 2 && second === 'listen-until-killed') {
+        yield { stream: 'stdout' as const, text: 'pid: 4242\nlistening\n' }
+        await listenerExits
+      } else {
+        yield { stream: 'stdout' as const, text: 'error: done for this test\n' }
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  return { events, killed, rounds: () => rounds }
+}
+
+test('the 🔊 beside a reply, pressed while listening, stops listening, reads the reply again, then listens again', async ($, on) => {
+  const clock = mock.clock(on)
+  const { events, killed, rounds } = talkWithOneAnswer(on, 'listen-until-killed')
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.advance(ARMED)
+  expect(events).toEqual(['listen 1', 'say It is noon.', 'listen 2'])
+
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  const speaker = await voice.find({ type: 'Button', key: 'replay-1' })
+  expect(speaker?.props.label).toBe('🔊')
+  expect(await voice.find({ type: 'Button', key: 'replay-0' })).toBeUndefined() // not beside what you said
+  await voice.press({ key: 'replay-1' })
+  for (let wait = 0; wait < 200 && rounds() < 3; wait++) await Promise.resolve()
+  await voice.unmount()
+
+  expect(killed).toEqual(['4242'])
+  // The listener is stopped before the voice starts, and comes back only after it.
+  expect(events).toEqual(['listen 1', 'say It is noon.', 'listen 2', 'kill 4242', 'say It is noon.', 'listen 3'])
+})
+
+test('the 🔊 pressed while paused reads the reply and stays paused, without listening', async ($, on) => {
+  const clock = mock.clock(on)
+  const { events, rounds } = talkWithOneAnswer(on, 'error')
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.settle()
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  expect(await voice.find({ type: 'Text', text: /^Paused$/ })).toBeDefined()
+
+  await voice.press({ key: 'replay-1' })
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+
+  expect(events.filter(one => one.startsWith('say'))).toEqual(['say It is noon.', 'say It is noon.'])
+  expect(rounds()).toBe(2)
+  expect(await voice.find({ type: 'Text', text: /^Paused$/ })).toBeDefined()
+  expect(await voice.find({ type: 'Button', key: 'resume' })).toBeDefined()
+  await voice.unmount()
+})
+
+test('the 🔊 reads the reply even when replies are set to text only', async ($, on) => {
+  const clock = mock.clock(on)
+  mock.store(on)
+  const { events } = talkWithOneAnswer(on, 'error')
+  await $.command.run({ command: 'open-jarvis-talk-chat', args: '' })
+  const settingsScreen = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  await settingsScreen.press({ key: 'open-settings' })
+  await settingsScreen.select({ key: 'settings-speak', value: 'off' })
+  await settingsScreen.press({ key: 'settings-save' })
+  await settingsScreen.unmount()
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.settle()
+  expect(events.filter(one => one.startsWith('say'))).toEqual([])
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  const speakers = (await voice.findAll({ type: 'Button' })).filter(b => b.key?.startsWith('replay-'))
+  expect(speakers).toHaveLength(1)
+  await voice.press({ key: speakers[0]?.key ?? '' })
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+  await voice.unmount()
+
+  expect(events.filter(one => one.startsWith('say'))).toEqual(['say It is noon.'])
+})
+
+test('tapping while a reply is read again stops the voice and listens again', async ($, on) => {
+  const clock = mock.clock(on)
+  const killed: string[] = []
+  let rounds = 0
+  let speeches = 0
+  let releaseListener = () => {}
+  const listenerExits = new Promise<void>(resolve => {
+    releaseListener = resolve
+  })
+  let releaseSpeaker = () => {}
+  const speakerExits = new Promise<void>(resolve => {
+    releaseSpeaker = resolve
+  })
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('process.run', (_, e) => {
+    if (isSetup(e.argv)) return checked()
+    if (e.argv[0] === '/bin/kill') {
+      killed.push(e.argv[2] ?? '')
+      if (e.argv[2] === '4242') releaseListener()
+      else releaseSpeaker()
+    }
+
+    return RAN
+  })
+  on('model.fork', () => ({ value: { isAnswered: true, text: 'A long answer.', usage } }))
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      speeches += 1
+      if (speeches === 1) {
+        yield KOKORO_SPOKE
+      } else {
+        yield { stream: 'stdout' as const, text: 'pid: 9003\n' }
+        await speakerExits
+      }
+    } else {
+      rounds += 1
+      if (rounds === 1) {
+        yield { stream: 'stdout' as const, text: 'listening\npartial: hi\nfinal: hi\n' }
+      } else if (rounds === 2) {
+        yield { stream: 'stdout' as const, text: 'pid: 4242\nlistening\n' }
+        await listenerExits
+      } else {
+        yield { stream: 'stdout' as const, text: 'error: done for this test\n' }
+      }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  await clock.advance(ARMED)
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  const replaying = voice.press({ key: 'replay-1' }) // settles once the voice stops
+  for (let wait = 0; wait < 200 && speeches < 2; wait++) await Promise.resolve()
+  await clock.advance(ARMED)
+  expect(await voice.find({ type: 'Text', text: /tap or press Space to interrupt/ })).toBeDefined()
+  await voice.press({ key: 'tap-orb' })
+  await replaying
+  for (let wait = 0; wait < 200 && rounds < 3; wait++) await Promise.resolve()
+  await voice.unmount()
+
+  expect(killed).toEqual(['4242', '9003'])
+  expect(rounds).toBe(3)
+})
+
+test('no 🔊 while Jarvis is thinking', async ($, on) => {
+  const clock = mock.clock(on)
+  const heard = ['hi', 'and then?']
+  let answers = 0
+  on('process.run', runReady)
+  on('ui.open', () => ({ value: { isPlaced: true } }))
+  on('model.fork', async () => {
+    answers += 1
+    if (answers > 1) await new Promise<void>(() => {})
+
+    return { value: { isAnswered: true, text: 'It is noon.', usage } }
+  })
+  on('process.spawn', async function* (_, e) {
+    if (isSay(e.argv)) {
+      yield KOKORO_SPOKE
+    } else {
+      const words = heard.shift() ?? ''
+      yield { stream: 'stdout' as const, text: `listening\npartial: ${words}\nfinal: ${words}\n` }
+    }
+
+    return { value: { code: 0, signal: null } }
+  })
+
+  await $.command.run({ command: 'open-jarvis-talk', args: '' })
+  for (let wait = 0; wait < 200; wait++) await Promise.resolve()
+  const voice = await $.ui.mount({ ...VOICE, surface: 'desktop' })
+  expect(await voice.find({ type: 'Text', text: /^Thinking…$/ })).toBeDefined()
+  expect(await voice.find({ type: 'Markdown', text: /noon/ })).toBeDefined()
+  expect(await voice.find({ type: 'Button', key: 'replay-1' })).toBeUndefined()
+  await clock.advance(0)
   await voice.unmount()
 })

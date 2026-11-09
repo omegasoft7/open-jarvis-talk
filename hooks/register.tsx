@@ -359,6 +359,8 @@ function isActive(state: TalkState): boolean {
 }
 const VOICE_TITLE = 'Open Jarvis Talk'
 const MIC = '🎙️'
+/** The button beside a reply that reads it aloud again. */
+const SPEAKER = '\u{1F50A}'
 const SILENT_ROUNDS_BEFORE_PAUSE = 6 // the listener waits 20 s a round
 
 type Stream = { return?: (value?: undefined) => unknown }
@@ -399,6 +401,8 @@ function takePid(child: Child, line: string): boolean {
 // thinking does not stop it. A tap disarms it until the next state has held
 // that long, so quick double taps, even two at the same moment, count once.
 const TAP_ARM_MS = 800
+/** The state under the orb, a Button while a tap acts: the keyboard focus sits here. */
+const TAP_KEY = 'tap-orb'
 let armTimer: { cancel: () => void } | null = null
 /** tapArmed as tapOrb checks it: written at once, before the atom catches up. */
 let isTapArmed = false
@@ -418,9 +422,18 @@ async function setTalk($: EngineInterface, state: TalkState): Promise<void> {
   if (isActive(state)) {
     armTimer = $.clock.after(TAP_ARM_MS, () => {
       armTimer = null
-      void setTapArmed($, true).catch(() => undefined)
+      void setTapArmed($, true)
+        .then(() => focusTap($))
+        .catch(() => undefined)
     })
   }
+}
+
+/** Puts the keyboard focus on the state under the orb, so Space (or Enter)
+ * presses it as a tap does. Only while the pane already holds the keyboard:
+ * it never takes the keys from the prompt. */
+async function focusTap($: EngineInterface): Promise<void> {
+  await $.ui.focus({ requestId: VOICE_PANE, key: TAP_KEY }).catch(() => undefined)
 }
 
 async function stopTalking($: EngineInterface, to: TalkState = 'off', why = ''): Promise<void> {
@@ -518,11 +531,19 @@ async function tapOrb($: EngineInterface): Promise<void> {
   }
   // One tap per state, taken before any await so a press at the same moment
   // finds it gone; the next state arms it again after TAP_ARM_MS.
-  await setTapArmed($, false)
+  isTapArmed = false
   const state = await read($, talk)
+  if (state === 'listening' && (!listener || (await read($, heard)).trim() === '')) {
+    // Nothing said yet: the press does nothing and the tap stays ready for
+    // when there is, unless the state moved on meanwhile.
+    if (armTimer === null && (await read($, talk)) === 'listening') isTapArmed = true
+
+    return
+  }
+  await setTapArmed($, false)
   if (state === 'listening') {
     const running = listener
-    if (!running || (await read($, heard)).trim() === '') return
+    if (!running) return
     jlog($, 'send now pressed')
     running.isSentEarly = true
     kill($, 'listener')
@@ -537,6 +558,42 @@ async function tapOrb($: EngineInterface): Promise<void> {
     kill($, 'speaker')
     void talkLoop($)
   }
+}
+
+/** The talkToken a replay runs under, and whether listening comes back after it. */
+let replayToken = -1
+let replayResumes = false
+
+/** The 🔊 beside a reply: reads it aloud again. Listening stops first, so the
+ * voice is not heard as the person speaking; afterwards the conversation goes
+ * on as it was: listening again if it was running, else paused. A tap
+ * interrupts it as it does any answer. Not while Jarvis is thinking. */
+async function replay($: EngineInterface, text: string): Promise<void> {
+  const state = await read($, talk)
+  const words = speakable(text)
+  if (state === 'thinking' || !words) return
+  // A replay pressed during another keeps that one's plan for afterwards.
+  const resumes = replayToken === talkToken && state === 'speaking' ? replayResumes : isActive(state)
+  talkToken += 1
+  const mine = talkToken
+  replayToken = mine
+  replayResumes = resumes
+  jlog($, `replay ${words.length}ch, then ${resumes ? 'listen' : 'pause'}`)
+  kill($, 'listener')
+  kill($, 'speaker')
+  watchPane($)
+  await update($, heard, () => '')
+  await setTalk($, 'speaking')
+  await speakAs($, words, mine, await read($, settings))
+  if (talkToken !== mine) return
+  if (resumes) {
+    void talkLoop($)
+
+    return
+  }
+  watchdog?.cancel()
+  watchdog = null
+  await setTalk($, 'paused')
 }
 
 // Jarvis's voice: Kokoro, a local neural voice (~/.claude/jarvis/speak.py, its
@@ -1390,12 +1447,14 @@ function settingsScreen(
   )
 }
 
-/** What pressing the state under the orb does now, or null when nothing. */
-function tapHint(state: TalkState, hearing: string, isArmed: boolean): string | null {
+/** What pressing the state under the orb does now, or null when nothing.
+ * On the desktop, Space presses it too (it holds the keyboard focus). */
+function tapHint(state: TalkState, hearing: string, isArmed: boolean, surface: string): string | null {
   if (!isArmed) return null
-  if (state === 'listening') return hearing.trim() === '' ? null : 'tap to send now'
-  if (state === 'thinking') return 'tap to stop'
-  if (state === 'speaking') return 'tap to interrupt'
+  const how = surface === 'desktop' ? 'tap or press Space' : 'tap'
+  if (state === 'listening') return hearing.trim() === '' ? null : `${how} to send now`
+  if (state === 'thinking') return `${how} to stop`
+  if (state === 'speaking') return `${how} to interrupt`
 
   return null
 }
@@ -1480,9 +1539,15 @@ export const register: Register = on => {
     if (edited !== null) return settingsScreen($, els, edited)
     const state = await read($, talk)
     const hearing = await read($, heard)
-    const hint = tapHint(state, hearing, await read($, tapArmed))
+    const isArmed = await read($, tapArmed)
+    const hint = tapHint(state, hearing, isArmed, e.surface)
+    // Drawn as a Button whenever a tap is armed, even before anything is said,
+    // so the keyboard focus can stay on it from one state to the next.
+    const isTappable = isArmed && isActive(state)
     const pending = await read($, draft)
     const list = await read($, chat)
+    const shownFrom = Math.max(0, list.length - 200)
+    const canReplay = state !== 'thinking'
 
     return (
       <Box flexDirection="column" gap={1} paddingY={1}>
@@ -1492,16 +1557,31 @@ export const register: Register = on => {
         {list.length === 0 && (
           <Text dimColor>Start talking. What you both say stays here to scroll back through.</Text>
         )}
-        {list.slice(-200).map((entry, index) =>
+        {list.slice(shownFrom).map((entry, index) =>
           entry.role === 'note' ? (
             <Text key={`vn${index}`} dimColor>
               {entry.text}
             </Text>
           ) : (
             <Box key={`vm${index}`} flexDirection="column">
-              <Text bold color={entry.role === 'jarvis' ? 'claude' : undefined}>
-                {entry.role === 'you' ? 'You' : 'Jarvis'}
-              </Text>
+              {entry.role === 'jarvis' ? (
+                <Box gap={1} alignItems="center">
+                  <Text bold color="claude">
+                    Jarvis
+                  </Text>
+                  {canReplay && (
+                    <Button
+                      key={`replay-${shownFrom + index}`}
+                      label={SPEAKER}
+                      plain
+                      dimColor
+                      onPress={() => void replay($, entry.text).catch(() => undefined)}
+                    />
+                  )}
+                </Box>
+              ) : (
+                <Text bold>You</Text>
+              )}
               <Markdown text={entry.text} />
             </Box>
           ),
@@ -1542,12 +1622,18 @@ export const register: Register = on => {
             </Text>
           )}
 
-          {hint === null ? (
+          {!isTappable ? (
             <Text bold color={state === 'paused' ? undefined : 'claude'}>
               {STATE_WORDS[state]}
             </Text>
+          ) : hint === null ? (
+            <Button key={TAP_KEY} plain autoFocus onPress={() => tapOrb($)}>
+              <Text bold color="claude">
+                {STATE_WORDS[state]}
+              </Text>
+            </Button>
           ) : (
-            <Button key="tap-orb" plain onPress={() => tapOrb($)}>
+            <Button key={TAP_KEY} plain autoFocus onPress={() => tapOrb($)}>
               <Text bold color="claude">
                 {STATE_WORDS[state]}
               </Text>{' '}
